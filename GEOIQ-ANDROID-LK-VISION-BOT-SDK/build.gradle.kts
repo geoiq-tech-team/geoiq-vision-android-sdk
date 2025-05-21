@@ -4,8 +4,8 @@ plugins {
     `maven-publish`
 }
 
-group = "com.github.pragatGeoIQ" // Must match GitHub user/org name
-version = "1.1.1"
+group = "com.github.geoiq-tech-team" // Must match GitHub user/org name
+version = "1.0.0"
 
 android {
     namespace = "com.geoiq.geoiq_android_lk_vision_bot_sdk"
@@ -55,14 +55,14 @@ afterEvaluate {
             create<MavenPublication>("release") {
                 from(components["release"])
 
-                groupId = "com.github.pragatGeoIQ"
-                artifactId = "geoiq-android-vision-lk-sdk"
-                version = "1.1.1"
+                groupId = "com.github.geoiq-tech-team"
+                artifactId = "geoiq-vision-android-sdk"
+                version = "1.0.0"
 
                 pom {
                     name.set("GeoIQ Vision")
                     description.set("A Vision Android SDK built in Kotlin.")
-                    url.set("https://github.com/pragatGeoIQ/geoiq-android-vision-lk-sdk")
+                    url.set("https://github.com/geoiq-tech-team/geoiq-vision-android-sdk")
                     licenses {
                         license {
                             name.set("Apache License 2.0")
@@ -77,9 +77,9 @@ afterEvaluate {
                         }
                     }
                     scm {
-                        connection.set("scm:git:git://github.com/pragatGeoIQ/geoiq-android-vision-lk-sdk.git")
-                        developerConnection.set("scm:git:ssh://github.com:pragatGeoIQ/geoiq-android-vision-lk-sdk.git")
-                        url.set("https://github.com/pragatGeoIQ/geoiq-android-vision-lk-sdk")
+                        connection.set("scm:git:git://github.com/geoiq-tech-team/geoiq-vision-android-sdk.git")
+                        developerConnection.set("scm:git:ssh://github.com:geoiq-tech-team/geoiq-vision-android-sdk.git")
+                        url.set("https://github.com/geoiq-tech-team/geoiq-vision-android-sdk")
                     }
                 }
             }

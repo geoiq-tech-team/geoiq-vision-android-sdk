@@ -9,7 +9,7 @@ android {
 
     defaultConfig {
         applicationId = "com.geoiq.geoiq_android_lk_vision_bot_sdk"
-        minSdk = 24
+        minSdk = 23
         targetSdk = 34
         versionCode = 1
         versionName = "1.0"
