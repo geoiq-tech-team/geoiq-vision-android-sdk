@@ -3,6 +3,7 @@ package com.geoiq.geoiq_android_lk_vision_bot_sdk
 import android.content.Context
 import android.util.Log
 import io.livekit.android.LiveKit
+import io.livekit.android.annotations.Beta
 import io.livekit.android.events.EventListenable
 import io.livekit.android.room.Room
 import io.livekit.android.room.RoomException
@@ -12,8 +13,9 @@ import io.livekit.android.room.participant.LocalParticipant
 import io.livekit.android.room.participant.Participant
 import io.livekit.android.room.participant.RemoteParticipant
 import io.livekit.android.room.track.Track
+import io.livekit.android.room.track.VideoTrack
+import io.livekit.android.room.track.LocalVideoTrack
 import io.livekit.android.room.track.TrackPublication
-import io.livekit.android.room.datastream.incoming.IncomingDataStreamManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -24,6 +26,12 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 // Removed: import kotlinx.coroutines.flow.collectLatest (as it's not used directly on RoomEvents)
 import kotlinx.coroutines.launch
+
+
+
+typealias Track = Track
+typealias VideoTrack = VideoTrack
+typealias  LocalVideoTrack  = LocalVideoTrack
 
 // ... (GeoVisionEvent sealed class remains the same) ...
 sealed class GeoVisionEvent {
@@ -40,6 +48,13 @@ sealed class GeoVisionEvent {
     data class ParticipantAttributesChanged(
         val participant: Participant,
         val changedAttributes: Map<String, String>
+    ) : GeoVisionEvent()
+
+
+    data class TranscriptionReceived(
+        val senderId: String?,
+        val message: String,
+        val isFinal: Boolean = false // Optional: if you want to mark messages
     ) : GeoVisionEvent()
     data class CustomMessageReceived(
         val senderId: String?,
@@ -59,6 +74,7 @@ object VisionBotSDKManager {
     private val _events = MutableSharedFlow<GeoVisionEvent>(replay = 1, extraBufferCapacity = 5)
     val events: SharedFlow<GeoVisionEvent> = _events.asSharedFlow()
 
+    @OptIn(Beta::class)
     fun connectToGeoVisionRoom(context: Context, socketUrl: String, accessToken: String) {
         if (currentRoom != null && (currentRoom?.state == Room.State.CONNECTED || currentRoom?.state == Room.State.CONNECTING)) {
             Log.w(TAG, "Already connected or connecting to a room. Call disconnectFromGeoVisionRoom() first.")
@@ -163,6 +179,32 @@ object VisionBotSDKManager {
                             _events.tryEmit(GeoVisionEvent.Error("Failed to decode incoming data for topic '$topic'", e))
                         }
                     }
+
+                    is RoomEvent.TranscriptionReceived -> {
+                        val participantId = event.participant?.identity?.toString()
+                        Log.i(TAG, "TranscriptionReceived from ${participantId ?: "Unknown Participant"}")
+                        event.transcriptionSegments.forEach { segment ->
+                            // The reference uses segment.senderIdentity. If participant is the primary source,
+                            // you might prefer event.participant.identity.toString() or reconcile them.
+                            // For this example, I'll use segment.senderIdentity as per your reference.
+                            val senderIdentity = segment.id ?: participantId ?: "Unknown Sender"
+                            val text = segment.text
+                            val isFinal = segment.final // Assuming TranscriptionSegment has a 'final' property
+
+                            Log.i(TAG, "Transcription segment from $senderIdentity (final: $isFinal): \"$text\"")
+
+                            // You'll likely want to emit a specific GeoVisionEvent for transcriptions.
+                            // Example: GeoVisionEvent.TranscriptionSegmentReceived
+                            // For now, adapting to a general TranscriptionReceived event:
+                            _events.tryEmit(GeoVisionEvent.TranscriptionReceived(senderIdentity, text, isFinal))
+
+                            // If you want to concatenate all segments into one message before emitting,
+                            // you would collect them here and emit once after the loop.
+                            // However, real-time transcription usually benefits from emitting segments as they arrive.
+                        }
+                    }
+
+
 
                     else -> {
                         // Log unhandled events or ignore
