@@ -41,6 +41,7 @@ sealed class GeoVisionEvent {
     data class ParticipantJoined(val participant: RemoteParticipant) : GeoVisionEvent()
     data class ParticipantLeft(val participant: RemoteParticipant) : GeoVisionEvent()
     data class TrackPublished(val publication: TrackPublication, val participant: LocalParticipant) : GeoVisionEvent()
+    data class TrackUnpublished(val publication: TrackPublication, val participant: RemoteParticipant) : GeoVisionEvent()
     data class TrackSubscribed(val track: Track, val publication: TrackPublication, val participant: RemoteParticipant) : GeoVisionEvent()
     data class TrackUnsubscribed(val track: Track, val publication: TrackPublication, val participant: RemoteParticipant) : GeoVisionEvent()
     data class ActiveSpeakersChanged(val speakers: List<Participant>) : GeoVisionEvent()
@@ -144,6 +145,14 @@ object VisionBotSDKManager {
                             _events.tryEmit(GeoVisionEvent.TrackPublished(event.publication, event.participant as LocalParticipant))
                         }
                     }
+
+                    is RoomEvent.TrackUnpublished -> {
+                        Log.i(TAG, "Track unpublished: ${event.publication.source}  from ${event.participant.identity}")
+                        if (event.participant is RemoteParticipant) {
+                            _events.tryEmit(GeoVisionEvent.TrackUnpublished(event.publication, event.participant as RemoteParticipant))
+                        }
+                    }
+
                     is RoomEvent.TrackSubscribed -> {
                         Log.i(TAG, "Remote track subscribed: ${event.publication.source} (${event.track.sid}) from ${event.participant.identity}")
                         if (event.participant is RemoteParticipant) {
@@ -179,6 +188,8 @@ object VisionBotSDKManager {
                             _events.tryEmit(GeoVisionEvent.Error("Failed to decode incoming data for topic '$topic'", e))
                         }
                     }
+
+
 
                     is RoomEvent.TranscriptionReceived -> {
                         val participantId = event.participant?.identity?.toString()
@@ -253,10 +264,13 @@ object VisionBotSDKManager {
         }
         Log.i(TAG, "Disconnecting from room: ${roomToDisconnect.name}")
         sdkScope.launch {
+            setCameraEnabled(false) // Ensure camera is off before disconnecting
+            setMicrophoneEnabled(false) // Ensure microphone is off before disconnecting
             roomToDisconnect.disconnect()
             // The Disconnected event from roomInstance.events.collect will handle cleanup
         }
     }
+
 
     suspend fun setCameraEnabled(enable: Boolean): Boolean { // Made it suspend as LiveKit's setCameraEnabled is suspend
         val localParticipant = currentRoom?.localParticipant ?: run {
@@ -306,6 +320,11 @@ object VisionBotSDKManager {
 
     fun getLocalParticipant(): LocalParticipant? {
         return currentRoom?.localParticipant
+    }
+
+    fun getIsSpeaking(): Boolean {
+        Log.e("Vinay Remote Speaker", currentRoom?.remoteParticipants?.values?.firstOrNull()?.name.toString())
+        return currentRoom?.remoteParticipants?.values?.firstOrNull()?.isSpeaking ?: false
     }
 
 
