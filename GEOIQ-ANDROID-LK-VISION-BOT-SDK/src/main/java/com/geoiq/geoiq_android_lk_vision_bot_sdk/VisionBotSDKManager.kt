@@ -16,6 +16,7 @@ import io.livekit.android.room.track.Track
 import io.livekit.android.room.track.VideoTrack
 import io.livekit.android.room.track.LocalVideoTrack
 import io.livekit.android.room.track.TrackPublication
+import io.livekit.android.room.track.DataPublishReliability
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -32,6 +33,7 @@ import okhttp3.internal.wait
 typealias Track = Track
 typealias VideoTrack = VideoTrack
 typealias  LocalVideoTrack  = LocalVideoTrack
+typealias  DataPublishReliability = DataPublishReliability
 
 // ... (GeoVisionEvent sealed class remains the same) ...
 sealed class GeoVisionEvent {
