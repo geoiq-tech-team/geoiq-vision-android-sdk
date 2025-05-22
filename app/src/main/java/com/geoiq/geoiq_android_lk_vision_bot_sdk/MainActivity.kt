@@ -93,8 +93,8 @@ fun SDKInteractionScreen(modifier: Modifier = Modifier) {
     val coroutineScope = rememberCoroutineScope()
 
 
-    var socketUrl by remember { mutableStateOf("wss://prod-giva-thcwnog4.livekit.cloud") } // TODO: Replace with your URL
-    var accessToken by remember { mutableStateOf("eyJhbGciOiJIUzI1NiJ9.eyJ2aWRlbyI6eyJyb29tIjoicm9vbS1XRmpCLWx1dVEiLCJyb29tSm9pbiI6dHJ1ZSwiY2FuUHVibGlzaCI6dHJ1ZSwiY2FuUHVibGlzaERhdGEiOnRydWUsImNhblN1YnNjcmliZSI6dHJ1ZX0sImlzcyI6IkFQSWk3OHM0VTk2cWpadSIsImV4cCI6MTc0Nzg1MTQxNiwibmJmIjowLCJzdWIiOiJpZGVudGl0eS1SUThsIn0.CHPbnkrC6obpB0nqdCB4eYrMkzeJxyHwJkAQn4iU_hI") } // TODO: Replace with your token
+    var socketUrl by remember { mutableStateOf("wss://website-agent.staging.geoiq.ai") } // TODO: Replace with your URL
+    var accessToken by remember { mutableStateOf("eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJuYW1lIjoiNUhCUzJIUFRPTyIsInZpZGVvIjp7InJvb21Kb2luIjp0cnVlLCJyb29tIjoiNUhCUzJIUFRPTyIsImNhblB1Ymxpc2giOnRydWUsImNhblN1YnNjcmliZSI6dHJ1ZSwiY2FuUHVibGlzaERhdGEiOnRydWV9LCJzdWIiOiJ0UXVVVHZoRjA4IiwiaXNzIjoiQVBJM0ZrSW1VUkFQalZ4IiwibmJmIjoxNzQ3ODcwNDc4LCJleHAiOjE3NDc4OTIwNzh9.RkZKh-RParTWpiLgcPj1UWoWtHQDz9NHWlA22LVQqes") } // TODO: Replace with your token
     var eventLog by remember { mutableStateOf(listOf<String>()) }
     var connectionStatus by remember { mutableStateOf("Disconnected") }
     var isConnecting by remember { mutableStateOf(false) }
@@ -215,7 +215,7 @@ fun SDKInteractionScreen(modifier: Modifier = Modifier) {
                 }
 
                 is GeoVisionEvent.TranscriptionReceived -> {
-                    addLog("Vinay Transcription: ${event.message}")
+                    addLog("Vinay Transcription: ${event.senderId} ${event.message}")
                 }
 
                 is GeoVisionEvent.Error -> {
@@ -347,15 +347,16 @@ fun SDKInteractionScreen(modifier: Modifier = Modifier) {
         }
 
 
-
-
-        Text("Event Log:", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 8.dp))
-        LazyColumn(modifier = Modifier.weight(1f).fillMaxWidth().padding(vertical = 4.dp)) {
-            items(eventLog.reversed()) { logEntry -> // Reversed to show newest first
-                Text(logEntry, style = MaterialTheme.typography.bodySmall)
-                Divider()
+        Button(onClick = {
+            coroutineScope.launch {
+                VisionBotSDKManager.shutdown()
+                addLog("Vinay Shutdown ")
+                // isMicrophoneEnabledUi = VisionBotSDKManager.isMicrophoneEnabled() // Or wait for event
             }
+        }) {
+            Text("Shutdown SDK")
         }
+
     }
 
 }
