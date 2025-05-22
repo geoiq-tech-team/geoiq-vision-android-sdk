@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "com.github.geoiq-tech-team" // Must match GitHub user/org name
-version = "1.0.4"
+version = "1.0.5"
 
 android {
     namespace = "com.geoiq.geoiq_android_lk_vision_bot_sdk"
@@ -57,7 +57,7 @@ afterEvaluate {
 
                 groupId = "com.github.geoiq-tech-team"
                 artifactId = "geoiq-vision-android-sdk"
-                version = "1.0.4"
+                version = "1.0.5"
 
                 pom {
                     name.set("GeoIQ Vision")
