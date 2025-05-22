@@ -26,7 +26,7 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 // Removed: import kotlinx.coroutines.flow.collectLatest (as it's not used directly on RoomEvents)
 import kotlinx.coroutines.launch
-
+import okhttp3.internal.wait
 
 
 typealias Track = Track
@@ -241,6 +241,7 @@ object VisionBotSDKManager {
         roomEventsJob = null
         currentRoom?.release() // Release LiveKit room resources
         currentRoom = null
+
     }
 
     fun disconnectFromGeoVisionRoom() {
@@ -315,7 +316,24 @@ object VisionBotSDKManager {
     // Call this when your SDK is no longer needed, e.g. in Application.onTerminate or when the main component using it is destroyed.
     fun shutdown() {
         Log.i(TAG, "Shutting down VisionBotSDKManager.")
-        disconnectFromGeoVisionRoom() // Ensure room is disconnected
+
+        // Use runBlocking to ensure disconnectFromGeoVisionRoom completes before cancellation
+        kotlinx.coroutines.runBlocking {
+            val roomToDisconnect = currentRoom
+            if (roomToDisconnect != null) {
+                Log.i(TAG, "Disconnecting from room: ${roomToDisconnect.name}")
+                setCameraEnabled(false) // Ensure camera is off before disconnecting
+                setMicrophoneEnabled(false) // Ensure microphone is off before disconnecting
+
+                roomToDisconnect.disconnect()
+                cleanupRoomResources() // Ensure cleanup is called after disconnect
+            } else {
+                Log.w(TAG, "Not connected to any room.")
+                _events.tryEmit(GeoVisionEvent.Error("Not connected to any room.", null))
+            }
+        }
+
         sdkScope.cancel() // Cancel all coroutines started by this SDK
     }
+
 }
