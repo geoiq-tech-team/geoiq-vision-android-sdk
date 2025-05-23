@@ -56,12 +56,12 @@ sealed class GeoVisionEvent {
 
     data class TranscriptionReceived(
         val senderId: String?,
-        val message: String,
+        val message: String?,
         val isFinal: Boolean = false // Optional: if you want to mark messages
     ) : GeoVisionEvent()
     data class CustomMessageReceived(
         val senderId: String?,
-        val message: String, // This will be the JSON string
+        val message: String?, // This will be the JSON string
         val topic: String?,    // Topic of the data message
         val isCritical: Boolean = false // Optional: if you want to mark messages
     ) : GeoVisionEvent()

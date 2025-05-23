@@ -79,9 +79,12 @@ fun SDKInteractionScreen(modifier: Modifier = Modifier) {
     val surfaceRendererRef = remember { mutableStateOf<SurfaceViewRenderer?>(null) }
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
+    var socketUrl by remember { mutableStateOf("wss://lk.diq.geoiq.ai") } // TODO: Replace with your URL
+    var accessToken by remember { mutableStateOf("eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJuYW1lIjoiUlJPJEFFRkEyVCIsInZpZGVvIjp7InJvb21Kb2luIjp0cnVlLCJyb29tIjoiUlJPJEFFRkEyVCIsImNhblB1Ymxpc2giOnRydWUsImNhblN1YnNjcmliZSI6dHJ1ZSwiY2FuUHVibGlzaERhdGEiOnRydWV9LCJzdWIiOiJVVkt1enlFeTRqIiwiaXNzIjoiQVBJZ1BYNG9hOU1VOUd0IiwibmJmIjoxNzQ3OTE2ODQ1LCJleHAiOjE3NDc5Mzg0NDV9.MpvGSE7wwLbUT_v1BneikzxDY_wEjRV58XFedwf94zk") } // TODO: Replace with your token
 
-    var socketUrl by remember { mutableStateOf("wss://tusheet-website-agent-m4pgool9.livekit.cloud") } // TODO: Replace with your URL
-    var accessToken by remember { mutableStateOf("eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJuYW1lIjoiYXNnYWciLCJ2aWRlbyI6eyJyb29tSm9pbiI6dHJ1ZSwicm9vbSI6ImFzZ2FnIiwiY2FuUHVibGlzaCI6dHJ1ZSwiY2FuU3Vic2NyaWJlIjp0cnVlLCJjYW5QdWJsaXNoRGF0YSI6dHJ1ZX0sInN1YiI6ImF2aWEiLCJpc3MiOiJBUEl1QkE1RkR5aEpOUGMiLCJuYmYiOjE3NDc5MzQ3OTksImV4cCI6MTc0Nzk1NjM5OX0.vJWji62l4x-wr-E50CjsXoje4lX8FICSY2WONCpAwEs") } // TODO: Replace with your token
+
+//    val socketUrl by remember { mutableStateOf("wss://tusheet-website-agent-m4pgool9.livekit.cloud") } // TODO: Replace with your URL
+//    val accessToken by remember { mutableStateOf("eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJuYW1lIjoiYXNnYWciLCJ2aWRlbyI6eyJyb29tSm9pbiI6dHJ1ZSwicm9vbSI6ImFzZ2FnIiwiY2FuUHVibGlzaCI6dHJ1ZSwiY2FuU3Vic2NyaWJlIjp0cnVlLCJjYW5QdWJsaXNoRGF0YSI6dHJ1ZX0sInN1YiI6ImF2aWEiLCJpc3MiOiJBUEl1QkE1RkR5aEpOUGMiLCJuYmYiOjE3NDc5MzQ3OTksImV4cCI6MTc0Nzk1NjM5OX0.vJWji62l4x-wr-E50CjsXoje4lX8FICSY2WONCpAwEs") } // TODO: Replace with your token
     var eventLog by remember { mutableStateOf(listOf<String>()) }
     var connectionStatus by remember { mutableStateOf("Disconnected") }
     var isConnecting by remember { mutableStateOf(false) }
@@ -208,7 +211,7 @@ fun SDKInteractionScreen(modifier: Modifier = Modifier) {
 
                 is GeoVisionEvent.Error -> {
                     addLog("Vinay ERROR: ${event.message} ${event.exception?.localizedMessage ?: ""}")
-                    if (event.message.contains("Failed to connect") || event.message.contains("Connection setup failed")) {
+                    if ( event.message.contains("Failed to connect") || event.message.contains("Connection setup failed")) {
                         isConnecting = false
                         isConnected = false
                         connectionStatus = "Error Connecting"
@@ -216,7 +219,7 @@ fun SDKInteractionScreen(modifier: Modifier = Modifier) {
                 }
 
                 is GeoVisionEvent.CustomMessageReceived -> {
-                    addLog("GeoIQ Received message on my-topic: ${event.message}")
+                    addLog("Vinay GeoIQ Received message on my-topic: ${event.message}")
                 }
             }
         }
