@@ -80,7 +80,7 @@ fun SDKInteractionScreen(modifier: Modifier = Modifier) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
     var socketUrl by remember { mutableStateOf("wss://lk.diq.geoiq.ai") } // TODO: Replace with your URL
-    var accessToken by remember { mutableStateOf("eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJuYW1lIjoiUlJPJEFFRkEyVCIsInZpZGVvIjp7InJvb21Kb2luIjp0cnVlLCJyb29tIjoiUlJPJEFFRkEyVCIsImNhblB1Ymxpc2giOnRydWUsImNhblN1YnNjcmliZSI6dHJ1ZSwiY2FuUHVibGlzaERhdGEiOnRydWV9LCJzdWIiOiJVVkt1enlFeTRqIiwiaXNzIjoiQVBJZ1BYNG9hOU1VOUd0IiwibmJmIjoxNzQ3OTE2ODQ1LCJleHAiOjE3NDc5Mzg0NDV9.MpvGSE7wwLbUT_v1BneikzxDY_wEjRV58XFedwf94zk") } // TODO: Replace with your token
+    var accessToken by remember { mutableStateOf("eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJuYW1lIjoiOUFPNlRDRko0JCIsInZpZGVvIjp7InJvb21Kb2luIjp0cnVlLCJyb29tIjoiOUFPNlRDRko0JCIsImNhblB1Ymxpc2giOnRydWUsImNhblN1YnNjcmliZSI6dHJ1ZSwiY2FuUHVibGlzaERhdGEiOnRydWV9LCJzdWIiOiJOSlVCeE53S1A4IiwiaXNzIjoiQVBJZ1BYNG9hOU1VOUd0IiwibmJmIjoxNzQ3OTk5MjcxLCJleHAiOjE3NDgwMjA4NzF9.8Jsl4LfuKLB_7CbYOyseouijGkDM-0UuCltCduXjGuI") } // TODO: Replace with your token
 
 
 //    val socketUrl by remember { mutableStateOf("wss://tusheet-website-agent-m4pgool9.livekit.cloud") } // TODO: Replace with your URL

@@ -110,7 +110,7 @@ object VisionBotSDKManager {
                 Log.d(TAG, "Received RoomEvent: ${event::class.java.simpleName}")
                 when (event) {
                     is RoomEvent.Connected -> {
-                        Log.i(TAG, "Successfully connected to room: ${roomInstance.name}. Did reconnect: ${event}")
+                        Log.i(TAG, "Successfully connected to room: ${roomInstance.name}. Did reconnect: $event")
                         _events.tryEmit(GeoVisionEvent.Connected(roomInstance.name ?: "Unknown Room", roomInstance.localParticipant))
                     }
                     is RoomEvent.Disconnected -> {
@@ -126,7 +126,7 @@ object VisionBotSDKManager {
                     is RoomEvent.ParticipantConnected -> {
                         Log.i(TAG, "Participant joined: ${event.participant.identity}")
                         if (event.participant is RemoteParticipant) {
-                            _events.tryEmit(GeoVisionEvent.ParticipantJoined(event.participant as RemoteParticipant))
+                            _events.tryEmit(GeoVisionEvent.ParticipantJoined(event.participant))
                         }
                     }
                     is RoomEvent.ParticipantAttributesChanged -> {
@@ -138,7 +138,7 @@ object VisionBotSDKManager {
                     is RoomEvent.ParticipantDisconnected -> {
                         Log.i(TAG, "Participant left: ${event.participant.identity}")
                         if (event.participant is RemoteParticipant) {
-                            _events.tryEmit(GeoVisionEvent.ParticipantLeft(event.participant as RemoteParticipant))
+                            _events.tryEmit(GeoVisionEvent.ParticipantLeft(event.participant))
                         }
                     }
                     is RoomEvent.TrackPublished -> {
@@ -158,13 +158,13 @@ object VisionBotSDKManager {
                     is RoomEvent.TrackSubscribed -> {
                         Log.i(TAG, "Remote track subscribed: ${event.publication.source} (${event.track.sid}) from ${event.participant.identity}")
                         if (event.participant is RemoteParticipant) {
-                            _events.tryEmit(GeoVisionEvent.TrackSubscribed(event.track, event.publication, event.participant as RemoteParticipant))
+                            _events.tryEmit(GeoVisionEvent.TrackSubscribed(event.track, event.publication, event.participant ))
                         }
                     }
                     is RoomEvent.TrackUnsubscribed -> {
                         Log.i(TAG, "Remote track unsubscribed: ${event} (${event.track.sid}) from ${event.participant.identity}")
                         if (event.participant is RemoteParticipant) {
-                            _events.tryEmit(GeoVisionEvent.TrackUnsubscribed(event.track, event.publications, event.participant as RemoteParticipant))
+                            _events.tryEmit(GeoVisionEvent.TrackUnsubscribed(event.track, event.publications, event.participant ))
                         }
                     }
                     is RoomEvent.ActiveSpeakersChanged -> {
