@@ -67,7 +67,7 @@ dependencies {
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
 
-    implementation(project(":GEOIQ-ANDROID-LK-VISION-BOT-SDK"))
-//    implementation ("com.github.geoiq-tech-team:geoiq-vision-android-sdk:v1.0.3")
+//    implementation(project(":GEOIQ-ANDROID-LK-VISION-BOT-SDK"))
+    implementation ("com.github.geoiq-tech-team:geoiq-vision-android-sdk:v1.0.6")
 
 }

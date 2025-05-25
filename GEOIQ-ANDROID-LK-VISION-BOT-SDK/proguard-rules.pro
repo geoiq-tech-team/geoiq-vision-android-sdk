@@ -19,3 +19,17 @@
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
+
+# Keep public classes in your SDK's main package
+-keep class com.geoiq.geoiq_android_lk_vision_bot_sdk.GeoVisionEvent.** { *; }
+-keep class com.geoiq.geoiq_android_lk_vision_bot_sdk.VisionBotSDKManager.** { *; }
+
+# Required to prevent LiveKit / WebRTC from being stripped (if you're exposing them)
+-keep class org.webrtc.** { *; }
+-keep class io.livekit.** { *; }
+
+# Optional: keep Kotlin metadata (helps with reflection)
+-keep class kotlin.Metadata { *; }
+
+# Keep annotations
+-keep @interface **.**

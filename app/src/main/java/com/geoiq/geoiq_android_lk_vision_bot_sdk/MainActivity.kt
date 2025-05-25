@@ -79,8 +79,8 @@ fun SDKInteractionScreen(modifier: Modifier = Modifier) {
     val surfaceRendererRef = remember { mutableStateOf<SurfaceViewRenderer?>(null) }
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
-    var socketUrl by remember { mutableStateOf("wss://lk.diq.geoiq.ai") } // TODO: Replace with your URL
-    var accessToken by remember { mutableStateOf("eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJuYW1lIjoiOUFPNlRDRko0JCIsInZpZGVvIjp7InJvb21Kb2luIjp0cnVlLCJyb29tIjoiOUFPNlRDRko0JCIsImNhblB1Ymxpc2giOnRydWUsImNhblN1YnNjcmliZSI6dHJ1ZSwiY2FuUHVibGlzaERhdGEiOnRydWV9LCJzdWIiOiJOSlVCeE53S1A4IiwiaXNzIjoiQVBJZ1BYNG9hOU1VOUd0IiwibmJmIjoxNzQ3OTk5MjcxLCJleHAiOjE3NDgwMjA4NzF9.8Jsl4LfuKLB_7CbYOyseouijGkDM-0UuCltCduXjGuI") } // TODO: Replace with your token
+    var socketUrl by remember { mutableStateOf("wss://lk.diq.geoiq.ai") }
+    var accessToken by remember { mutableStateOf("eyJhbGciOiJIUzI1NiJ9.eyJ2aWRlbyI6eyJyb29tIjoicm9vbS1oUzQyLWFFTFEiLCJyb29tSm9pbiI6dHJ1ZSwiY2FuUHVibGlzaCI6dHJ1ZSwiY2FuUHVibGlzaERhdGEiOnRydWUsImNhblN1YnNjcmliZSI6dHJ1ZX0sImlzcyI6IkFQSWdQWDRvYTlNVTlHdCIsImV4cCI6MTc0ODIwNzQzMiwibmJmIjowLCJzdWIiOiJpZGVudGl0eS1rYW51In0.Mrq4DqeXPShAAFOMG1y-t48KhFneCTdIa2pamdkE11E") }
 
 
 //    val socketUrl by remember { mutableStateOf("wss://tusheet-website-agent-m4pgool9.livekit.cloud") } // TODO: Replace with your URL
@@ -157,6 +157,16 @@ fun SDKInteractionScreen(modifier: Modifier = Modifier) {
                 }
                 is GeoVisionEvent.ParticipantJoined -> {
                     addLog("Vinay Participant joined: ${event.participant.identity}")
+                    coroutineScope.launch {
+                        addLog("Vinay Sending messsage on Connect  ")
+                        VisionBotSDKManager.getLocalParticipant()?.publishData(
+                            "BOT_CONNECTED".toByteArray(Charsets.UTF_8),
+                            DataPublishReliability.RELIABLE,
+                            "vinay_bot_connected"
+                        )
+
+                        // isMicrophoneEnabledUi = VisionBotSDKManager.isMicrophoneEnabled() // Or wait for event
+                    }
                 }
                 is GeoVisionEvent.ParticipantAttributesChanged -> {
                     addLog("Vinay Participant joined: ${event.participant.identity}")
