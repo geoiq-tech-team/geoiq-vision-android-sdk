@@ -1,14 +1,15 @@
 package com.geoiq.geoiq_android_lk_vision_bot_sdk
 
 import android.content.Context
+import android.net.Uri
 import android.util.Log
 import io.livekit.android.LiveKit
 import io.livekit.android.annotations.Beta
 import io.livekit.android.events.EventListenable
 import io.livekit.android.room.Room
 import io.livekit.android.room.RoomException
-import io.livekit.android.events.RoomEvent // LiveKit's RoomEvent
-import io.livekit.android.events.collect // LiveKit's collect extension for its events
+import io.livekit.android.events.RoomEvent
+import io.livekit.android.events.collect
 import io.livekit.android.room.participant.LocalParticipant
 import io.livekit.android.room.participant.Participant
 import io.livekit.android.room.participant.RemoteParticipant
@@ -25,17 +26,20 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
-// Removed: import kotlinx.coroutines.flow.collectLatest (as it's not used directly on RoomEvents)
 import kotlinx.coroutines.launch
-import okhttp3.internal.wait
+import java.io.File
+import io.livekit.android.room.datastream.StreamBytesOptions
+import io.livekit.android.rpc.RpcError
+import kotlinx.coroutines.withContext
+import java.io.InputStream
 
 
 typealias Track = Track
 typealias VideoTrack = VideoTrack
 typealias  LocalVideoTrack  = LocalVideoTrack
 typealias  DataPublishReliability = DataPublishReliability
+typealias RpcError = RpcError
 
-// ... (GeoVisionEvent sealed class remains the same) ...
 sealed class GeoVisionEvent {
     data class Connecting(val url: String, val tokenSnippet: String) : GeoVisionEvent()
     data class Connected(val roomName: String, val localParticipant: LocalParticipant) : GeoVisionEvent()
@@ -96,16 +100,7 @@ object VisionBotSDKManager {
         }
 
         roomEventsJob = sdkScope.launch {
-            // Use LiveKit's 'collect' for RoomEvents
-//            var remoteParticipantIdentities = currentRoom!!.remoteParticipants.values;
-//            var participantEvents = remoteParticipantIdentities.forEach() {
-//                participant -> participant.events.collect {
-//                Log.d(TAG, "Received ParticipantEvent: ${participant::class.java.simpleName}")
-//            }
-//            }
-//            roomInstance.localParticipant.events.collect {
-//                event -> Log.d(TAG, "Received LocalParticipantEvent: ${event::class.java.simpleName}")
-//            }
+
             roomInstance.events.collect { event -> // Corrected line
                 Log.d(TAG, "Received RoomEvent: ${event::class.java.simpleName}")
                 when (event) {
@@ -172,13 +167,8 @@ object VisionBotSDKManager {
                         Log.i(TAG, "Active speakers changed: $speakerIdentities")
                         _events.tryEmit(GeoVisionEvent.ActiveSpeakersChanged(event.speakers))
                     }
-                    // RoomEvent.ConnectionError was changed to RoomEvent.FailedToConnect in recent LiveKit versions
-                    // If you are using an older version, you might have RoomEvent.ConnectionError
-                    // For newer versions (like 2.x), FailedToConnect is the primary one for initial connection failures.
-                    // Disconnected event will carry errors for disconnections post-connection.
 
-                    // Handle other events or add a default else case if necessary
-                    is RoomEvent.DataReceived -> { // --- MODIFIED FOR CUSTOM DATA WITH TOPIC ---
+                    is RoomEvent.DataReceived -> {
                         val senderId = event.participant?.identity?.toString() // Can be null if sent by server directly
                         val topic = event.topic
                         try {
@@ -197,27 +187,15 @@ object VisionBotSDKManager {
                         val participantId = event.participant?.identity?.toString()
                         Log.i(TAG, "TranscriptionReceived from ${participantId ?: "Unknown Participant"}")
                         event.transcriptionSegments.forEach { segment ->
-                            // The reference uses segment.senderIdentity. If participant is the primary source,
-                            // you might prefer event.participant.identity.toString() or reconcile them.
-                            // For this example, I'll use segment.senderIdentity as per your reference.
+
                             val senderIdentity = segment.id ?: participantId ?: "Unknown Sender"
                             val text = segment.text
                             val isFinal = segment.final // Assuming TranscriptionSegment has a 'final' property
 
                             Log.i(TAG, "Transcription segment from $senderIdentity (final: $isFinal): \"$text\"")
-
-                            // You'll likely want to emit a specific GeoVisionEvent for transcriptions.
-                            // Example: GeoVisionEvent.TranscriptionSegmentReceived
-                            // For now, adapting to a general TranscriptionReceived event:
                             _events.tryEmit(GeoVisionEvent.TranscriptionReceived(senderIdentity, text, isFinal))
-
-                            // If you want to concatenate all segments into one message before emitting,
-                            // you would collect them here and emit once after the loop.
-                            // However, real-time transcription usually benefits from emitting segments as they arrive.
                         }
                     }
-
-
 
                     else -> {
                         // Log unhandled events or ignore
@@ -280,6 +258,7 @@ object VisionBotSDKManager {
             _events.tryEmit(GeoVisionEvent.Error("Cannot toggle camera: Not connected.", null))
             return false
         }
+
         return try {
             Log.i(TAG, "Setting camera enabled: $enable")
             localParticipant.setCameraEnabled(enable)
@@ -334,7 +313,69 @@ object VisionBotSDKManager {
         return currentRoom
     }
 
-    // Call this when your SDK is no longer needed, e.g. in Application.onTerminate or when the main component using it is destroyed.
+
+    suspend fun sendFile(context: Context, file: File, topic: String = "send-file"): Boolean {
+        val room = getCurrentroom()
+        val localParticipant = room?.localParticipant
+        if (localParticipant == null) {
+            Log.e("VisionBotSDKManager", "Cannot send image, not connected to a room or no local participant.")
+            return false
+        }
+
+
+        if ( !file.exists()) {
+            Log.e("VisionBotSDKManager", "Failed to read file: ${file.absolutePath}. File does not exist.")
+            return false
+        }
+
+        var inputStream: InputStream? = null
+        return try {
+            Log.d("VisionBotSDKManager", "Attempting to send file: ${file.name} on topic: $topic")
+
+            val streamOptions = StreamBytesOptions(
+                topic = topic,
+                name = file.name,
+                mimeType = context.contentResolver.getType(Uri.fromFile(file)) ?: "application/octet-stream",
+                totalSize = file.length(),
+                attributes = mapOf("fileName" to file.name, "fileSize" to file.length().toString()),
+            )
+            Log.d("VisionBotSDKManager", "Stream options created: $streamOptions")
+
+            val writer = localParticipant.streamBytes(streamOptions)
+
+            Log.d("VisionBotSDKManager", "Opened byte stream writer with ID: ${writer.info}")
+
+
+            inputStream = file.inputStream() // Open InputStream from the temporary file
+
+            withContext(Dispatchers.IO) {
+                try {
+                    val buffer = ByteArray(4096) // Or another appropriate buffer size
+                    var bytesRead: Int
+                    while (inputStream.read(buffer).also { bytesRead = it } != -1) {
+                        // Write only the number of bytes read.
+                        // If bytesRead is less than buffer.size, we send a smaller array.
+                        writer.write(buffer.copyOf(bytesRead))
+                    }
+                    // The stream must be explicitly closed when you are done sending data [2]
+                    writer.close()
+                    Log.d("VisionBotSDKManager", "Image file stream sent and writer closed for: ${file.name}")
+
+                } catch (e: Exception) {
+                    Log.e("VisionBotSDKManager", "Error writing image file to stream: ${e.message}", e)
+                    writer.close() // Attempt to close writer on error too
+                    throw e
+                }
+            }
+            true
+        } catch (e: Exception) {
+            Log.e("VisionBotSDKManager", "Error in sendImageFile: ${e.message}", e)
+            false
+        } finally {
+            inputStream?.close() // Ensure InputStream is closed
+        }
+    }
+
     fun shutdown() {
         Log.i(TAG, "Shutting down VisionBotSDKManager.")
 

@@ -27,6 +27,7 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            signingConfig = signingConfigs.getByName("debug")
         }
     }
     compileOptions {
@@ -67,7 +68,7 @@ dependencies {
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
 
-//    implementation(project(":GEOIQ-ANDROID-LK-VISION-BOT-SDK"))
-    implementation ("com.github.geoiq-tech-team:geoiq-vision-android-sdk:v1.0.6")
+    implementation(project(":GEOIQ-ANDROID-LK-VISION-BOT-SDK"))
+//    implementation ("com.github.geoiq-tech-team:geoiq-vision-android-sdk:v1.0.7")
 
 }

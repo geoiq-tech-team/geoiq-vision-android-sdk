@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "com.github.geoiq-tech-team" // Must match GitHub user/org name
-version = "1.0.7"
+version = "1.0.8"
 
 android {
     namespace = "com.geoiq.geoiq_android_lk_vision_bot_sdk"
@@ -37,7 +37,6 @@ android {
 }
 
 dependencies {
-
     implementation("androidx.core:core-ktx:1.12.0")
     implementation("androidx.appcompat:appcompat:1.6.1")
     implementation("com.google.android.material:material:1.11.0")
@@ -46,7 +45,6 @@ dependencies {
     androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
     api ("io.livekit:livekit-android:2.16.0")
     api ("io.livekit:livekit-android-compose-components:1.3.0")
-
 }
 
 afterEvaluate {
@@ -57,7 +55,7 @@ afterEvaluate {
 
                 groupId = "com.github.geoiq-tech-team"
                 artifactId = "geoiq-vision-android-sdk"
-                version = "1.0.7"
+                version = "1.0.8"
 
                 pom {
                     name.set("GeoIQ Vision")
