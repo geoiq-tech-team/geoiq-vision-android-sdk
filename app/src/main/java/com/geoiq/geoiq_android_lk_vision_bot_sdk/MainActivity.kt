@@ -29,6 +29,7 @@ import io.livekit.android.renderer.SurfaceViewRenderer
 import java.io.File
 import android.content.Context
 import android.provider.OpenableColumns
+import livekit.org.webrtc.RendererCommon
 import java.io.FileOutputStream
 import java.io.IOException
 import java.io.InputStream
@@ -84,7 +85,6 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun SDKInteractionScreen(modifier: Modifier = Modifier) {
     val surfaceRendererRef = remember { mutableStateOf<SurfaceViewRenderer?>(null) }
-    var isRendererInitialized by remember { mutableStateOf(false) }
 
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
