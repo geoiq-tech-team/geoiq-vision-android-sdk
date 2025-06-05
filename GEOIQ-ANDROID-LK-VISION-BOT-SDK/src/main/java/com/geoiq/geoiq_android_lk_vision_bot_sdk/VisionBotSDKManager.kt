@@ -111,12 +111,12 @@ object VisionBotSDKManager {
                     is RoomEvent.Disconnected -> {
                         Log.i(TAG, "Disconnected from room: ${roomInstance.name}. Reason: ${event.error?.message ?: "Client initiated"}")
                         _events.tryEmit(GeoVisionEvent.Disconnected(event.error?.message ?: "Client initiated"))
-                        cleanupRoomResources()
+//                        cleanupRoomResources()
                     }
                     is RoomEvent.FailedToConnect -> {
                         Log.e(TAG, "Failed to connect to room: ${roomInstance.name}", event.error)
                         _events.tryEmit(GeoVisionEvent.Error("Failed to connect: ${event.error.message}", event.error))
-                        cleanupRoomResources()
+//                        cleanupRoomResources()
                     }
                     is RoomEvent.ParticipantConnected -> {
                         Log.i(TAG, "Participant joined: ${event.participant.identity}")
@@ -217,11 +217,11 @@ object VisionBotSDKManager {
             } catch (e: RoomException.ConnectException) { // More specific exception for connection issues
                 Log.e(TAG, "Connection setup failed (ConnectException): ${e.message}", e)
                 _events.tryEmit(GeoVisionEvent.Error("Connection setup failed: ${e.message}", e))
-                cleanupRoomResources()
+//                cleanupRoomResources()
             } catch (e: Exception) { // Generic fallback
                 Log.e(TAG, "Generic connection setup failed: ${e.message}", e)
                 _events.tryEmit(GeoVisionEvent.Error("Connection setup failed: ${e.message}", e))
-                cleanupRoomResources()
+//                cleanupRoomResources()
             }
         }
     }
@@ -233,6 +233,10 @@ object VisionBotSDKManager {
         currentRoom?.release() // Release LiveKit room resources
         currentRoom = null
 
+    }
+    fun releaseRoomResources() {
+        currentRoom?.release() // Release LiveKit room resources
+        currentRoom = null
     }
 
     fun disconnectFromGeoVisionRoom() {
@@ -288,6 +292,8 @@ object VisionBotSDKManager {
     }
 
     fun isCameraEnabled(): Boolean {
+
+        Log.d(TAG, "Checking if camera is enabled ${currentRoom?.localParticipant?.isCameraEnabled()}")
         return currentRoom?.localParticipant?.isCameraEnabled() == true
     }
 
