@@ -88,13 +88,13 @@ fun SDKInteractionScreen(modifier: Modifier = Modifier) {
 
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
-    var socketUrl by remember { mutableStateOf("wss://lk-stg1.diq.geoiq.ai") }
-    var accessToken by remember { mutableStateOf("eyJhbGciOiJIUzI1NiJ9.eyJ2aWRlbyI6eyJyb29tIjoicm9vbS1JQ0x2LW1HcUwiLCJyb29tSm9pbiI6dHJ1ZSwiY2FuUHVibGlzaCI6dHJ1ZSwiY2FuUHVibGlzaERhdGEiOnRydWUsImNhblN1YnNjcmliZSI6dHJ1ZX0sImlzcyI6IkFQSUJGUVFSNHJ4RnpwaCIsImV4cCI6MTc0OTEzOTkwOCwibmJmIjowLCJzdWIiOiJpZGVudGl0eS1SdzhwIn0.WPHfV5gJYXlFgvhWLRUStWSix5tY_USH4PIGpVw4w2Q") } // TODO: Replace with your valid token
+    val socketUrl by remember { mutableStateOf("wss://lk-internal-v1.diq.geoiq.ai") }
+    val accessToken by remember { mutableStateOf("eyJhbGciOiJIUzI1NiJ9.eyJ2aWRlbyI6eyJyb29tIjoicm9vbS13MWVRLVdHN1YiLCJyb29tSm9pbiI6dHJ1ZSwiY2FuUHVibGlzaCI6dHJ1ZSwiY2FuUHVibGlzaERhdGEiOnRydWUsImNhblN1YnNjcmliZSI6dHJ1ZX0sImlzcyI6IkFQSWNndnlpTUQ3SlZyeCIsImV4cCI6MTc1MDI2MjgzOSwibmJmIjowLCJzdWIiOiJpZGVudGl0eS1CQXJ1In0.AAHYg4_5aFvOjCVOSnaKJW6lLCCUBvt6AEUJYqUUeYI") } // TODO: Replace with your valid token
     var eventLog by remember { mutableStateOf(listOf<String>()) }
     var connectionStatus by remember { mutableStateOf("Disconnected") }
     var isConnecting by remember { mutableStateOf(false) }
     var isConnected by remember { mutableStateOf(false) }
-
+    var connectQuality by remember { mutableStateOf<ConnectionQuality>(ConnectionQuality.UNKNOWN) }
     var isCameraEnabledUi by remember { mutableStateOf(VisionBotSDKManager.isCameraEnabled()) }
     var isMicrophoneEnabledUi by remember { mutableStateOf(VisionBotSDKManager.isMicrophoneEnabled()) }
     var isSpeaking by remember { mutableStateOf(VisionBotSDKManager.getIsSpeaking()) }
@@ -200,7 +200,6 @@ fun SDKInteractionScreen(modifier: Modifier = Modifier) {
     )
 
 
-
     suspend fun performRpcCall() {
 
         val room = VisionBotSDKManager.getCurrentroom()
@@ -224,7 +223,10 @@ fun SDKInteractionScreen(modifier: Modifier = Modifier) {
 
     fun attachLocalVideo(videoTrack: LocalVideoTrack) {
         val renderer = surfaceRendererRef.value
-        Log.d("VisionSDK", "Attaching local video track: ${videoTrack.name}, renderer :: ${renderer}")
+        Log.d(
+            "VisionSDK",
+            "Attaching local video track: ${videoTrack.name}, renderer :: ${renderer}"
+        )
         if (renderer == null) {
             Log.e("VisionSDK", "Renderer is not initialized")
             return
@@ -237,8 +239,8 @@ fun SDKInteractionScreen(modifier: Modifier = Modifier) {
         }
         try {
             // Re-init renderer every time it's a new instance (safe and idempotent)
-                VisionBotSDKManager.getCurrentroom()?.initVideoRenderer(renderer)
-                Log.d("VisionSDK", "Renderer initialized")
+            VisionBotSDKManager.getCurrentroom()?.initVideoRenderer(renderer)
+            Log.d("VisionSDK", "Renderer initialized")
 
         } catch (e: Exception) {
             Log.e("VisionSDK", "Error initializing renderer: ${e.localizedMessage}")
@@ -291,7 +293,10 @@ fun SDKInteractionScreen(modifier: Modifier = Modifier) {
                             renderer.release()
 
                         } catch (e: Exception) {
-                            Log.e("SDKInteractionScreen", "Error clearing renderer: ${e.localizedMessage}")
+                            Log.e(
+                                "SDKInteractionScreen",
+                                "Error clearing renderer: ${e.localizedMessage}"
+                            )
                         }
                     }
 
@@ -342,6 +347,7 @@ fun SDKInteractionScreen(modifier: Modifier = Modifier) {
                         isMicrophoneEnabledUi = true // Reflect mic is published
                     }
                 }
+
                 is GeoVisionEvent.TrackUnpublished -> {
                     addLog("Vinay Local track unpublished: ${event.publication.source} by ${event.participant.identity}")
                     if (event.publication.source.name.lowercase() == "camera") {
@@ -350,12 +356,20 @@ fun SDKInteractionScreen(modifier: Modifier = Modifier) {
                         isMicrophoneEnabledUi = false
                     }
                 }
+
                 is GeoVisionEvent.TrackSubscribed -> {
                     addLog("VinayTrack subscribed: ${event.track.name} from ${event.participant.identity}")
                 }
 
                 is GeoVisionEvent.TrackUnsubscribed -> {
                     addLog("Vinay Track unsubscribed: ${event.track.name} from ${event.participant.identity}")
+                }
+
+                is GeoVisionEvent.ConnectionQualityChanged -> {
+                    addLog("Vinay Connection Quality changed: ${event.quality} from ${event.participant.identity}")
+
+                    if (event.participant is LocalParticipant)
+                        connectQuality = event.quality
                 }
 
                 is GeoVisionEvent.ActiveSpeakersChanged -> {
@@ -405,15 +419,15 @@ fun SDKInteractionScreen(modifier: Modifier = Modifier) {
             modifier = Modifier
                 .fillMaxWidth()
                 .height(200.dp),
-//            onRelease = { renderer ->
-//                try {
-//                    renderer.release()
-//                } catch (e: Exception) {
-//                    Log.e("SDKInteractionScreen", "Error releasing renderer: ${e.localizedMessage}")
-//                }
-////                surfaceRendererRef.value = null
-////                isRendererInitialized = false
-//            }
+            onRelease = { renderer ->
+                try {
+                    renderer.release()
+                } catch (e: Exception) {
+                    Log.e("SDKInteractionScreen", "Error releasing renderer: ${e.localizedMessage}")
+                }
+//                surfaceRendererRef.value = null
+//                isRendererInitialized = false
+            }
         )
 
 //        OutlinedTextField(
@@ -454,6 +468,7 @@ fun SDKInteractionScreen(modifier: Modifier = Modifier) {
 
         Text("Status: $connectionStatus")
         Text("Speaking: $isSpeaking")
+        Text("Connection quality: ${connectQuality == ConnectionQuality.EXCELLENT}")
 
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Button(onClick = {
@@ -499,26 +514,26 @@ fun SDKInteractionScreen(modifier: Modifier = Modifier) {
             Text("Pick & Send Image")
         }
 
-        Button(
-            onClick = {
-                if (isConnected) {
-                    coroutineScope.launch {
-                        addLog("Attempting to send a file via RPC call")
-                        try {
-                            performRpcCall()
-                            addLog("RPC call performed successfully.")
-                        } catch (e: Exception) {
-                            addLog("RPC call failed: ${e.localizedMessage}")
-                        }
-                    }
-                } else {
-                    addLog("Connect to a room before sending an image.")
-                }
-            },
-            enabled = isConnected // Only enable if connected
-        ) {
-            Text("Perform RPC")
-        }
+//        Button(
+//            onClick = {
+//                if (isConnected) {
+//                    coroutineScope.launch {
+//                        addLog("Attempting to send a file via RPC call")
+//                        try {
+//                            performRpcCall()
+//                            addLog("RPC call performed successfully.")
+//                        } catch (e: Exception) {
+//                            addLog("RPC call failed: ${e.localizedMessage}")
+//                        }
+//                    }
+//                } else {
+//                    addLog("Connect to a room before sending an image.")
+//                }
+//            },
+//            enabled = isConnected // Only enable if connected
+//        ) {
+//            Text("Perform RPC")
+//        }
 
 
         Button(onClick = {
