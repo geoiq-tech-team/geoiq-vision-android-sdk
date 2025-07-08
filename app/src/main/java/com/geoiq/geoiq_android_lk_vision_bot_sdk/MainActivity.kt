@@ -89,7 +89,7 @@ fun SDKInteractionScreen(modifier: Modifier = Modifier) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
     val socketUrl by remember { mutableStateOf("wss://lk-internal-v1.diq.geoiq.ai") }
-    val accessToken by remember { mutableStateOf("eyJhbGciOiJIUzI1NiJ9.eyJ2aWRlbyI6eyJyb29tIjoicm9vbS13MWVRLVdHN1YiLCJyb29tSm9pbiI6dHJ1ZSwiY2FuUHVibGlzaCI6dHJ1ZSwiY2FuUHVibGlzaERhdGEiOnRydWUsImNhblN1YnNjcmliZSI6dHJ1ZX0sImlzcyI6IkFQSWNndnlpTUQ3SlZyeCIsImV4cCI6MTc1MDI2MjgzOSwibmJmIjowLCJzdWIiOiJpZGVudGl0eS1CQXJ1In0.AAHYg4_5aFvOjCVOSnaKJW6lLCCUBvt6AEUJYqUUeYI") } // TODO: Replace with your valid token
+    val accessToken by remember { mutableStateOf("eyJhbGciOiJIUzI1NiJ9.eyJ2aWRlbyI6eyJyb29tIjoicm9vbS1jcHJtLXp1R0QiLCJyb29tSm9pbiI6dHJ1ZSwiY2FuUHVibGlzaCI6dHJ1ZSwiY2FuUHVibGlzaERhdGEiOnRydWUsImNhblN1YnNjcmliZSI6dHJ1ZX0sImlzcyI6IkFQSWNndnlpTUQ3SlZyeCIsImV4cCI6MTc1MDg2MTgyNSwibmJmIjowLCJzdWIiOiJpZGVudGl0eS1JWUlpIn0.BhUn-qtopEaaxWMEwdfPYGFYM9aMOYeXlzL2dFh25GE") } // TODO: Replace with your valid token
     var eventLog by remember { mutableStateOf(listOf<String>()) }
     var connectionStatus by remember { mutableStateOf("Disconnected") }
     var isConnecting by remember { mutableStateOf(false) }
@@ -256,7 +256,7 @@ fun SDKInteractionScreen(modifier: Modifier = Modifier) {
 
         VisionBotSDKManager.events.collect { event ->
             addLog("Vinay Event: $event")
-
+            addLog("vinay audio options ${VisionBotSDKManager.getCurrentroom()?.audioTrackCaptureDefaults}")
             when (event) {
                 is GeoVisionEvent.Connecting -> {
                     addLog("Vinay Connecting to ${event.url} with token ending in ...${event.tokenSnippet}")
@@ -344,6 +344,8 @@ fun SDKInteractionScreen(modifier: Modifier = Modifier) {
                             addLog("Expected LocalVideoTrack but got ${localTrack?.javaClass?.simpleName}")
                         }
                     } else if (event.publication.source?.name?.lowercase() == "microphone") {
+
+
                         isMicrophoneEnabledUi = true // Reflect mic is published
                     }
                 }

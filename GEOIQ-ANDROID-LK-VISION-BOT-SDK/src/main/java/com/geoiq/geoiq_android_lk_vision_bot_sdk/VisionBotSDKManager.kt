@@ -103,7 +103,7 @@ sealed class GeoVisionEvent {
 
 object VisionBotSDKManager {
 
-    private const val TAG = "GeoIQSDK"
+    private const val TAG = "GeoI_VB_SDK"
     public var currentRoom: Room? = null
     private var roomEventsJob: Job? = null
     private val sdkScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
@@ -113,10 +113,10 @@ object VisionBotSDKManager {
     @OptIn(Beta::class)
     fun connectToGeoVisionRoom(context: Context, socketUrl: String, accessToken: String) {
         if (currentRoom != null && (currentRoom?.state == Room.State.CONNECTED || currentRoom?.state == Room.State.CONNECTING)) {
-            Log.w(
-                TAG,
-                "Already connected or connecting to a room. Call disconnectFromGeoVisionRoom() first."
-            )
+//            Log.w(
+//                TAG,
+//                "Already connected or connecting to a room. Call disconnectFromGeoVisionRoom() first."
+//            )
             _events.tryEmit(GeoVisionEvent.Error("Already connected or connecting.", null))
             return
         }
@@ -126,7 +126,7 @@ object VisionBotSDKManager {
         currentRoom = LiveKit.create(appContext = context.applicationContext)
 
         val roomInstance = currentRoom ?: run {
-            Log.e(TAG, "Failed to create LiveKit Room object.")
+//            Log.e(TAG, "Failed to create LiveKit Room object.")
             _events.tryEmit(GeoVisionEvent.Error("Failed to create Room object.", null))
             return
         }
@@ -134,13 +134,13 @@ object VisionBotSDKManager {
         roomEventsJob = sdkScope.launch {
 
             roomInstance.events.collect { event -> // Corrected line
-                Log.d(TAG, "Received RoomEvent: ${event::class.java.simpleName}")
+//                Log.d(TAG, "Received RoomEvent: ${event::class.java.simpleName}")
                 when (event) {
                     is RoomEvent.Connected -> {
-                        Log.i(
-                            TAG,
-                            "Successfully connected to room: ${roomInstance.name}. Did reconnect: $event"
-                        )
+//                        Log.i(
+//                            TAG,
+//                            "Successfully connected to room: ${roomInstance.name}. Did reconnect: $event"
+//                        )
                         _events.tryEmit(
                             GeoVisionEvent.Connected(
                                 roomInstance.name ?: "Unknown Room", roomInstance.localParticipant
@@ -149,10 +149,10 @@ object VisionBotSDKManager {
                     }
 
                     is RoomEvent.Disconnected -> {
-                        Log.i(
-                            TAG,
-                            "Disconnected from room: ${roomInstance.name}. Reason: ${event.error?.message ?: "Client initiated"}"
-                        )
+//                        Log.i(
+//                            TAG,
+//                            "Disconnected from room: ${roomInstance.name}. Reason: ${event.error?.message ?: "Client initiated"}"
+//                        )
                         _events.tryEmit(
                             GeoVisionEvent.Disconnected(
                                 event.error?.message ?: "Client initiated"
@@ -162,7 +162,7 @@ object VisionBotSDKManager {
                     }
 
                     is RoomEvent.FailedToConnect -> {
-                        Log.e(TAG, "Failed to connect to room: ${roomInstance.name}", event.error)
+//                        Log.e(TAG, "Failed to connect to room: ${roomInstance.name}", event.error)
                         _events.tryEmit(
                             GeoVisionEvent.Error(
                                 "Failed to connect: ${event.error.message}",
@@ -173,7 +173,7 @@ object VisionBotSDKManager {
                     }
 
                     is RoomEvent.ParticipantConnected -> {
-                        Log.i(TAG, "Participant joined: ${event.participant.identity}")
+//                        Log.i(TAG, "Participant joined: ${event.participant.identity}")
                         if (event.participant is RemoteParticipant) {
                             _events.tryEmit(GeoVisionEvent.ParticipantJoined(event.participant))
                         }
@@ -182,10 +182,10 @@ object VisionBotSDKManager {
                     is RoomEvent.ParticipantAttributesChanged -> {
                         val participant = event.participant
                         val attributes = event.changedAttributes
-                        Log.i(
-                            TAG,
-                            "Participant attributes changed for ${participant.identity}: $attributes"
-                        )
+//                        Log.i(
+//                            TAG,
+//                            "Participant attributes changed for ${participant.identity}: $attributes"
+//                        )
                         _events.tryEmit(
                             GeoVisionEvent.ParticipantAttributesChanged(
                                 participant,
@@ -195,7 +195,7 @@ object VisionBotSDKManager {
                     }
 
                     is RoomEvent.ParticipantDisconnected -> {
-                        Log.i(TAG, "Participant left: ${event.participant.identity}")
+//                        Log.i(TAG, "Participant left: ${event.participant.identity}")
                         if (event.participant is RemoteParticipant) {
                             _events.tryEmit(GeoVisionEvent.ParticipantLeft(event.participant))
                         }
@@ -203,10 +203,10 @@ object VisionBotSDKManager {
 
                     is RoomEvent.TrackPublished -> {
                         if (event.participant is LocalParticipant) {
-                            Log.i(
-                                TAG,
-                                "Local track published: ${event.publication.source} by ${event.participant.identity}"
-                            )
+//                            Log.i(
+//                                TAG,
+//                                "Local track published: ${event.publication.source} by ${event.participant.identity}"
+//                            )
                             _events.tryEmit(
                                 GeoVisionEvent.TrackPublished(
                                     event.publication,
@@ -217,10 +217,10 @@ object VisionBotSDKManager {
                     }
 
                     is RoomEvent.TrackUnpublished -> {
-                        Log.i(
-                            TAG,
-                            "Track unpublished: ${event.publication.source}  from ${event.participant.identity}"
-                        )
+//                        Log.i(
+//                            TAG,
+//                            "Track unpublished: ${event.publication.source}  from ${event.participant.identity}"
+//                        )
                         if (event.participant is RemoteParticipant) {
                             _events.tryEmit(
                                 GeoVisionEvent.TrackUnpublished(
@@ -232,10 +232,10 @@ object VisionBotSDKManager {
                     }
 
                     is RoomEvent.TrackSubscribed -> {
-                        Log.i(
-                            TAG,
-                            "Remote track subscribed: ${event.publication.source} (${event.track.sid}) from ${event.participant.identity}"
-                        )
+//                        Log.i(
+//                            TAG,
+//                            "Remote track subscribed: ${event.publication.source} (${event.track.sid}) from ${event.participant.identity}"
+//                        )
                         if (event.participant is RemoteParticipant) {
                             _events.tryEmit(
                                 GeoVisionEvent.TrackSubscribed(
@@ -248,10 +248,10 @@ object VisionBotSDKManager {
                     }
 
                     is RoomEvent.TrackUnsubscribed -> {
-                        Log.i(
-                            TAG,
-                            "Remote track unsubscribed: ${event} (${event.track.sid}) from ${event.participant.identity}"
-                        )
+//                        Log.i(
+//                            TAG,
+//                            "Remote track unsubscribed: ${event} (${event.track.sid}) from ${event.participant.identity}"
+//                        )
                         if (event.participant is RemoteParticipant) {
                             _events.tryEmit(
                                 GeoVisionEvent.TrackUnsubscribed(
@@ -264,10 +264,10 @@ object VisionBotSDKManager {
                     }
 
                     is RoomEvent.ConnectionQualityChanged -> {
-                        Log.i(
-                            TAG,
-                            "Connection Quality Changed : ${event.participant.identity} ${event.quality} "
-                        )
+//                        Log.i(
+//                            TAG,
+//                            "Connection Quality Changed : ${event.participant.identity} ${event.quality} "
+//                        )
                         _events.tryEmit(
                             GeoVisionEvent.ConnectionQualityChanged(
                                 event.quality,
@@ -279,7 +279,7 @@ object VisionBotSDKManager {
 
                     is RoomEvent.ActiveSpeakersChanged -> {
                         val speakerIdentities = event.speakers.mapNotNull { it.identity }
-                        Log.i(TAG, "Active speakers changed: $speakerIdentities")
+//                        Log.i(TAG, "Active speakers changed: $speakerIdentities")
                         _events.tryEmit(GeoVisionEvent.ActiveSpeakersChanged(event.speakers))
                     }
 
@@ -289,10 +289,10 @@ object VisionBotSDKManager {
                         val topic = event.topic
                         try {
                             val message = event.data.toString(Charsets.UTF_8)
-                            Log.i(
-                                TAG,
-                                "DataReceived on topic '$topic' from ${senderId ?: "Server"}: $message"
-                            )
+//                            Log.i(
+//                                TAG,
+//                                "DataReceived on topic '$topic' from ${senderId ?: "Server"}: $message"
+//                            )
                             _events.tryEmit(
                                 GeoVisionEvent.CustomMessageReceived(
                                     senderId,
@@ -301,7 +301,7 @@ object VisionBotSDKManager {
                                 )
                             )
                         } catch (e: Exception) {
-                            Log.e(TAG, "Error decoding DataReceived on topic '$topic'", e)
+//                            Log.e(TAG, "Error decoding DataReceived on topic '$topic'", e)
                             _events.tryEmit(
                                 GeoVisionEvent.Error(
                                     "Failed to decode incoming data for topic '$topic'",
@@ -314,10 +314,10 @@ object VisionBotSDKManager {
 
                     is RoomEvent.TranscriptionReceived -> {
                         val participantId = event.participant?.identity?.toString()
-                        Log.i(
-                            TAG,
-                            "TranscriptionReceived from ${participantId ?: "Unknown Participant"}"
-                        )
+//                        Log.i(
+//                            TAG,
+//                            "TranscriptionReceived from ${participantId ?: "Unknown Participant"}"
+//                        )
                         event.transcriptionSegments.forEach { segment ->
 
                             val senderIdentity = segment.id ?: participantId ?: "Unknown Sender"
@@ -325,10 +325,10 @@ object VisionBotSDKManager {
                             val isFinal =
                                 segment.final // Assuming TranscriptionSegment has a 'final' property
 
-                            Log.i(
-                                TAG,
-                                "Transcription segment from $senderIdentity (final: $isFinal): \"$text\""
-                            )
+//                            Log.i(
+//                                TAG,
+//                                "Transcription segment from $senderIdentity (final: $isFinal): \"$text\""
+//                            )
                             _events.tryEmit(
                                 GeoVisionEvent.TranscriptionReceived(
                                     senderIdentity,
@@ -348,7 +348,7 @@ object VisionBotSDKManager {
             }
         }
 
-        Log.i(TAG, "Attempting to connect to LiveKit URL: $socketUrl")
+//        Log.i(TAG, "Attempting to connect to LiveKit URL: $socketUrl")
         _events.tryEmit(GeoVisionEvent.Connecting(socketUrl, accessToken.takeLast(10)))
 
         sdkScope.launch {
@@ -358,11 +358,11 @@ object VisionBotSDKManager {
                     token = accessToken,
                 )
             } catch (e: RoomException.ConnectException) { // More specific exception for connection issues
-                Log.e(TAG, "Connection setup failed (ConnectException): ${e.message}", e)
+//                Log.e(TAG, "Connection setup failed (ConnectException): ${e.message}", e)
                 _events.tryEmit(GeoVisionEvent.Error("Connection setup failed: ${e.message}", e))
 //                cleanupRoomResources()
             } catch (e: Exception) { // Generic fallback
-                Log.e(TAG, "Generic connection setup failed: ${e.message}", e)
+//                Log.e(TAG, "Generic connection setup failed: ${e.message}", e)
                 _events.tryEmit(GeoVisionEvent.Error("Connection setup failed: ${e.message}", e))
 //                cleanupRoomResources()
             }
@@ -370,7 +370,7 @@ object VisionBotSDKManager {
     }
 
     private fun cleanupRoomResources() {
-        Log.d(TAG, "Cleaning up room resources.")
+//        Log.d(TAG, "Cleaning up room resources.")
         roomEventsJob?.cancel() // Cancel the event collection coroutine
         roomEventsJob = null
         currentRoom?.release() // Release LiveKit room resources
@@ -386,11 +386,11 @@ object VisionBotSDKManager {
     fun disconnectFromGeoVisionRoom() {
         val roomToDisconnect = currentRoom
         if (roomToDisconnect == null) {
-            Log.w(TAG, "Not connected to any room.")
+//            Log.w(TAG, "Not connected to any room.")
             _events.tryEmit(GeoVisionEvent.Error("Not connected to any room.", null))
             return
         }
-        Log.i(TAG, "Disconnecting from room: ${roomToDisconnect.name}")
+//        Log.i(TAG, "Disconnecting from room: ${roomToDisconnect.name}")
         sdkScope.launch {
             setCameraEnabled(false) // Ensure camera is off before disconnecting
             setMicrophoneEnabled(false) // Ensure microphone is off before disconnecting
@@ -402,17 +402,17 @@ object VisionBotSDKManager {
 
     suspend fun setCameraEnabled(enable: Boolean): Boolean { // Made it suspend as LiveKit's setCameraEnabled is suspend
         val localParticipant = currentRoom?.localParticipant ?: run {
-            Log.w(TAG, "Cannot toggle camera: Not connected or local participant not found.")
+//            Log.w(TAG, "Cannot toggle camera: Not connected or local participant not found.")
             _events.tryEmit(GeoVisionEvent.Error("Cannot toggle camera: Not connected.", null))
             return false
         }
 
         return try {
-            Log.i(TAG, "Setting camera enabled: $enable")
+//            Log.i(TAG, "Setting camera enabled: $enable")
             localParticipant.setCameraEnabled(enable)
             true // LiveKit's setCameraEnabled returns Unit, so we infer success if no exception
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to set camera enabled: ${e.message}", e)
+//            Log.e(TAG, "Failed to set camera enabled: ${e.message}", e)
             _events.tryEmit(GeoVisionEvent.Error("Failed to set camera: ${e.message}", e))
             false
         }
@@ -420,16 +420,16 @@ object VisionBotSDKManager {
 
     suspend fun setMicrophoneEnabled(enable: Boolean): Boolean { // Made it suspend
         val localParticipant = currentRoom?.localParticipant ?: run {
-            Log.w(TAG, "Cannot toggle microphone: Not connected or local participant not found.")
+//            Log.w(TAG, "Cannot toggle microphone: Not connected or local participant not found.")
             _events.tryEmit(GeoVisionEvent.Error("Cannot toggle microphone: Not connected.", null))
             return false
         }
         return try {
-            Log.i(TAG, "Setting microphone enabled: $enable")
+//            Log.i(TAG, "Setting microphone enabled: $enable")
             localParticipant.setMicrophoneEnabled(enable)
             true // LiveKit's setMicrophoneEnabled returns Unit
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to set microphone enabled: ${e.message}", e)
+//            Log.e(TAG, "Failed to set microphone enabled: ${e.message}", e)
             _events.tryEmit(GeoVisionEvent.Error("Failed to set microphone: ${e.message}", e))
             false
         }
@@ -437,10 +437,10 @@ object VisionBotSDKManager {
 
     fun isCameraEnabled(): Boolean {
 
-        Log.d(
-            TAG,
-            "Checking if camera is enabled ${currentRoom?.localParticipant?.isCameraEnabled()}"
-        )
+//        Log.d(
+//            TAG,
+//            "Checking if camera is enabled ${currentRoom?.localParticipant?.isCameraEnabled()}"
+//        )
         return currentRoom?.localParticipant?.isCameraEnabled() == true
     }
 
@@ -457,10 +457,10 @@ object VisionBotSDKManager {
     }
 
     fun getIsSpeaking(): Boolean {
-        Log.e(
-            "Vinay Remote Speaker",
-            currentRoom?.remoteParticipants?.values?.firstOrNull()?.name.toString()
-        )
+//        Log.e(
+//            "Vinay Remote Speaker",
+//            currentRoom?.remoteParticipants?.values?.firstOrNull()?.name.toString()
+//        )
         return currentRoom?.remoteParticipants?.values?.firstOrNull()?.isSpeaking ?: false
     }
 
@@ -475,7 +475,7 @@ object VisionBotSDKManager {
         val localParticipant = room?.localParticipant
         if (localParticipant == null) {
             Log.e(
-                "VisionBotSDKManager",
+                TAG,
                 "Cannot send image, not connected to a room or no local participant."
             )
             return false
@@ -483,16 +483,16 @@ object VisionBotSDKManager {
 
 
         if (!file.exists()) {
-            Log.e(
-                "VisionBotSDKManager",
-                "Failed to read file: ${file.absolutePath}. File does not exist."
-            )
+//            Log.e(
+//                "VisionBotSDKManager",
+//                "Failed to read file: ${file.absolutePath}. File does not exist."
+//            )
             return false
         }
 
         var inputStream: InputStream? = null
         return try {
-            Log.d("VisionBotSDKManager", "Attempting to send file: ${file.name} on topic: $topic")
+//            Log.d("VisionBotSDKManager", "Attempting to send file: ${file.name} on topic: $topic")
 
             val streamOptions = StreamBytesOptions(
                 topic = topic,
@@ -502,11 +502,11 @@ object VisionBotSDKManager {
                 totalSize = file.length(),
                 attributes = mapOf("fileName" to file.name, "fileSize" to file.length().toString()),
             )
-            Log.d("VisionBotSDKManager", "Stream options created: $streamOptions")
+//            Log.d("VisionBotSDKManager", "Stream options created: $streamOptions")
 
             val writer = localParticipant.streamBytes(streamOptions)
 
-            Log.d("VisionBotSDKManager", "Opened byte stream writer with ID: ${writer.info}")
+//            Log.d("VisionBotSDKManager", "Opened byte stream writer with ID: ${writer.info}")
 
 
             inputStream = file.inputStream() // Open InputStream from the temporary file
@@ -522,14 +522,14 @@ object VisionBotSDKManager {
                     }
                     // The stream must be explicitly closed when you are done sending data [2]
                     writer.close()
-                    Log.d(
-                        "VisionBotSDKManager",
-                        "Image file stream sent and writer closed for: ${file.name}"
-                    )
+//                    Log.d(
+//                        "VisionBotSDKManager",
+//                        "Image file stream sent and writer closed for: ${file.name}"
+//                    )
 
                 } catch (e: Exception) {
                     Log.e(
-                        "VisionBotSDKManager",
+                        TAG,
                         "Error writing image file to stream: ${e.message}",
                         e
                     )
@@ -539,7 +539,7 @@ object VisionBotSDKManager {
             }
             true
         } catch (e: Exception) {
-            Log.e("VisionBotSDKManager", "Error in sendImageFile: ${e.message}", e)
+            Log.e(TAG, "Error in sendImageFile: ${e.message}", e)
             false
         } finally {
             inputStream?.close() // Ensure InputStream is closed
@@ -547,20 +547,20 @@ object VisionBotSDKManager {
     }
 
     fun shutdown() {
-        Log.i(TAG, "Shutting down VisionBotSDKManager.")
+//        Log.i(TAG, "Shutting down VisionBotSDKManager.")
 
         // Use runBlocking to ensure disconnectFromGeoVisionRoom completes before cancellation
         kotlinx.coroutines.runBlocking {
             val roomToDisconnect = currentRoom
             if (roomToDisconnect != null) {
-                Log.i(TAG, "Disconnecting from room: ${roomToDisconnect.name}")
+//                Log.i(TAG, "Disconnecting from room: ${roomToDisconnect.name}")
                 setCameraEnabled(false) // Ensure camera is off before disconnecting
                 setMicrophoneEnabled(false) // Ensure microphone is off before disconnecting
 
                 roomToDisconnect.disconnect()
                 cleanupRoomResources() // Ensure cleanup is called after disconnect
             } else {
-                Log.w(TAG, "Not connected to any room.")
+//                Log.w(TAG, "Not connected to any room.")
                 _events.tryEmit(GeoVisionEvent.Error("Not connected to any room.", null))
             }
         }
