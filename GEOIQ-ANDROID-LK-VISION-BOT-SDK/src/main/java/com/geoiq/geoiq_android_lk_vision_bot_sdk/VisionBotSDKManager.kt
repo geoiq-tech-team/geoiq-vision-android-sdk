@@ -4,6 +4,7 @@ import android.content.Context
 import android.net.Uri
 import android.util.Log
 import io.livekit.android.LiveKit
+import io.livekit.android.RoomOptions
 import io.livekit.android.annotations.Beta
 import io.livekit.android.room.Room
 import io.livekit.android.room.RoomException
@@ -28,7 +29,12 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
 import java.io.File
 import io.livekit.android.room.datastream.StreamBytesOptions
+import io.livekit.android.room.participant.AudioTrackPublishDefaults
 import io.livekit.android.room.participant.ConnectionQuality
+import io.livekit.android.room.participant.VideoTrackPublishDefaults
+import io.livekit.android.room.track.CameraPosition
+import io.livekit.android.room.track.LocalAudioTrackOptions
+import io.livekit.android.room.track.LocalVideoTrackOptions
 import io.livekit.android.rpc.RpcError
 import kotlinx.coroutines.withContext
 import java.io.InputStream
@@ -42,6 +48,13 @@ typealias RpcError = RpcError
 typealias ConnectionQuality = ConnectionQuality
 typealias LocalParticipant = LocalParticipant
 typealias RemoteParticipant = RemoteParticipant
+typealias GeoVisionRoomOptions = RoomOptions
+typealias LocalAudioTrackOptions = LocalAudioTrackOptions
+typealias LocalVideoTrackOptions = LocalVideoTrackOptions
+typealias audioTrackPublishDefaults = AudioTrackPublishDefaults
+typealias videoTrackPublishDefaults= VideoTrackPublishDefaults
+typealias CameraPosition = CameraPosition
+
 
 sealed class GeoVisionEvent {
     data class Connecting(val url: String, val tokenSnippet: String) : GeoVisionEvent()
@@ -102,7 +115,12 @@ object VisionBotSDKManager {
     val events: SharedFlow<GeoVisionEvent> = _events.asSharedFlow()
 
     @OptIn(Beta::class)
-    fun connectToGeoVisionRoom(context: Context, socketUrl: String, accessToken: String) {
+    fun connectToGeoVisionRoom(
+        context: Context,
+        socketUrl: String,
+        accessToken: String,
+        roomOptions: GeoVisionRoomOptions = GeoVisionRoomOptions()
+    ) {
         if (currentRoom != null && (currentRoom?.state == Room.State.CONNECTED || currentRoom?.state == Room.State.CONNECTING)) {
 //            Log.w(
 //                TAG,
@@ -114,7 +132,7 @@ object VisionBotSDKManager {
 
         roomEventsJob?.cancel()
 
-        currentRoom = LiveKit.create(appContext = context.applicationContext)
+        currentRoom = LiveKit.create(appContext = context.applicationContext, options = roomOptions)
 
         val roomInstance = currentRoom ?: run {
 //            Log.e(TAG, "Failed to create LiveKit Room object.")

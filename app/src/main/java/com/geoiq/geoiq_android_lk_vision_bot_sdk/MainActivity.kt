@@ -447,7 +447,14 @@ fun SDKInteractionScreen(modifier: Modifier = Modifier) {
             Button(
                 onClick = {
                     if (socketUrl.isNotBlank() && accessToken.isNotBlank()) {
-                        VisionBotSDKManager.connectToGeoVisionRoom(context, socketUrl, accessToken)
+                        val roomOptions = GeoVisionRoomOptions(
+                            videoTrackCaptureDefaults = LocalVideoTrackOptions(
+                                position = CameraPosition.FRONT
+                            )
+                        )
+                        VisionBotSDKManager.connectToGeoVisionRoom(
+                            context, socketUrl, accessToken, roomOptions
+                        )
                     } else {
                         addLog("URL or Token is empty!")
                     }
