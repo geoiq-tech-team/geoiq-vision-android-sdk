@@ -34,6 +34,10 @@ import java.io.FileOutputStream
 import java.io.IOException
 import java.io.InputStream
 import org.json.JSONObject
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import java.net.URL
+import javax.net.ssl.HttpsURLConnection
 
 
 class MainActivity : ComponentActivity() {
@@ -65,8 +69,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             GEOIQANDROIDLKVISIONBOTSDKTheme {
                 Surface(
-                    modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
+                    modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background
                 ) {
                     SDKInteractionScreen()
                 }
@@ -85,11 +88,8 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun SDKInteractionScreen(modifier: Modifier = Modifier) {
     val surfaceRendererRef = remember { mutableStateOf<SurfaceViewRenderer?>(null) }
-
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
-    val socketUrl by remember { mutableStateOf("wss://lk-internal-v1.diq.geoiq.ai") }
-    val accessToken by remember { mutableStateOf("eyJhbGciOiJIUzI1NiJ9.eyJ2aWRlbyI6eyJyb29tIjoicm9vbS1jcHJtLXp1R0QiLCJyb29tSm9pbiI6dHJ1ZSwiY2FuUHVibGlzaCI6dHJ1ZSwiY2FuUHVibGlzaERhdGEiOnRydWUsImNhblN1YnNjcmliZSI6dHJ1ZX0sImlzcyI6IkFQSWNndnlpTUQ3SlZyeCIsImV4cCI6MTc1MDg2MTgyNSwibmJmIjowLCJzdWIiOiJpZGVudGl0eS1JWUlpIn0.BhUn-qtopEaaxWMEwdfPYGFYM9aMOYeXlzL2dFh25GE") } // TODO: Replace with your valid token
     var eventLog by remember { mutableStateOf(listOf<String>()) }
     var connectionStatus by remember { mutableStateOf("Disconnected") }
     var isConnecting by remember { mutableStateOf(false) }
@@ -98,6 +98,70 @@ fun SDKInteractionScreen(modifier: Modifier = Modifier) {
     var isCameraEnabledUi by remember { mutableStateOf(VisionBotSDKManager.isCameraEnabled()) }
     var isMicrophoneEnabledUi by remember { mutableStateOf(VisionBotSDKManager.isMicrophoneEnabled()) }
     var isSpeaking by remember { mutableStateOf(VisionBotSDKManager.getIsSpeaking()) }
+    val xApiKey = "eyshaG9sbGVzX2FwaV9rZXk6c2VjcmV0X2FwaV9rZXk6c2VjcmV0"
+    val geoVisionUrl = "wss://lk-stg3.diq.geoiq.ai"
+
+    suspend fun fetchToken(xApiKey: String): Triple<String, String, String>? =
+        withContext(Dispatchers.IO) {
+
+            val metadataJson = JSONObject()
+            metadataJson.put("event", "vaep_home_page")
+            metadataJson.put("va_data", JSONObject(mapOf("aiContext" to JSONObject())))
+            metadataJson.put("referrer_page", "home")
+
+            val junoMap = mapOf(
+                "result" to mapOf(
+                    "x-country-code-override" to "IN",
+                    "x-app-version" to "6.3.1 (25071816)",
+                    "x-session-token" to "54c12872-43ff-46b9-a080-7198e1c0cf85",
+                    "brand" to "ios",
+                    "x-customer-type" to "REPEAT",
+                    "accept-encoding" to "gzip",
+                    "x-country-code" to "IN",
+                    "udid" to "00000000-0000-0000-0000-000000000000",
+                    "x-build-version" to "25071816",
+                    "x-accept-language" to "en",
+                    "device-id" to "9433A241-E457-46A8-B544-EB04B4682A2D",
+                    "content-type" to "application/json",
+                    "x-api-client" to "ios",
+                    "api_key" to "valyoo123",
+                    "my_name" to "Vinay",
+                )
+            )
+            metadataJson.put("juno", JSONObject(junoMap))
+
+
+            val url = URL("https://beapis-in.staging.geoiq.ai/vision/user/v2.0/getsdkaccesstoken")
+            val conn = url.openConnection() as HttpsURLConnection
+            conn.requestMethod = "POST"
+            conn.setRequestProperty("Content-Type", "application/json")
+            conn.setRequestProperty("x-api-key", xApiKey)
+            conn.setRequestProperty("metadata", metadataJson.toString())
+            conn.doOutput = true
+
+
+            val finalBody = JSONObject()
+            finalBody.put("metadata", metadataJson)
+
+            conn.outputStream.bufferedWriter().use {
+                it.write(finalBody.toString())
+            }
+
+
+            try {
+                val response = conn.inputStream.bufferedReader().use { it.readText() }
+                val json = JSONObject(response)
+                Triple(
+                    json.getString("accessToken"),
+                    json.getString("room_name"),
+                    json.getString("identity")
+                )
+            } catch (e: Exception) {
+                null
+            } finally {
+                conn.disconnect()
+            }
+        }
 
     fun addLog(message: String) {
         val timestamp = SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date())
@@ -155,8 +219,7 @@ fun SDKInteractionScreen(modifier: Modifier = Modifier) {
 
 
     val pickFileLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent(),
-        onResult = { fileUri: Uri? ->
+        contract = ActivityResultContracts.GetContent(), onResult = { fileUri: Uri? ->
             if (fileUri != null) {
                 if (isConnected) { // Check if connected to the room
                     coroutineScope.launch {
@@ -196,8 +259,7 @@ fun SDKInteractionScreen(modifier: Modifier = Modifier) {
             } else {
                 addLog("No file selected.")
             }
-        }
-    )
+        })
 
 
     suspend fun performRpcCall() {
@@ -224,8 +286,7 @@ fun SDKInteractionScreen(modifier: Modifier = Modifier) {
     fun attachLocalVideo(videoTrack: LocalVideoTrack) {
         val renderer = surfaceRendererRef.value
         Log.d(
-            "VisionSDK",
-            "Attaching local video track: ${videoTrack.name}, renderer :: ${renderer}"
+            "VisionSDK", "Attaching local video track: ${videoTrack.name}, renderer :: ${renderer}"
         )
         if (renderer == null) {
             Log.e("VisionSDK", "Renderer is not initialized")
@@ -334,9 +395,8 @@ fun SDKInteractionScreen(modifier: Modifier = Modifier) {
                     if (event.publication.source?.name?.lowercase() == "camera") {
                         val localParticipant =
                             VisionBotSDKManager.getCurrentroom()?.localParticipant
-                        val localTrack = localParticipant
-                            ?.getTrackPublication(event.publication.source)
-                            ?.track
+                        val localTrack =
+                            localParticipant?.getTrackPublication(event.publication.source)?.track
 
                         if (localTrack is LocalVideoTrack) {
                             attachLocalVideo(localTrack)
@@ -370,8 +430,7 @@ fun SDKInteractionScreen(modifier: Modifier = Modifier) {
                 is GeoVisionEvent.ConnectionQualityChanged -> {
                     addLog("Vinay Connection Quality changed: ${event.quality} from ${event.participant.identity}")
 
-                    if (event.participant is LocalParticipant)
-                        connectQuality = event.quality
+                    if (event.participant is LocalParticipant) connectQuality = event.quality
                 }
 
                 is GeoVisionEvent.ActiveSpeakersChanged -> {
@@ -407,30 +466,26 @@ fun SDKInteractionScreen(modifier: Modifier = Modifier) {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        AndroidView(
-            factory = { ctx ->
-                SurfaceViewRenderer(ctx).apply {
-                    surfaceRendererRef.value = this
-                    setEnableHardwareScaler(true)
+        AndroidView(factory = { ctx ->
+            SurfaceViewRenderer(ctx).apply {
+                surfaceRendererRef.value = this
+                setEnableHardwareScaler(true)
 
-                    setMirror(true)
-                    setScalingType(RendererCommon.ScalingType.SCALE_ASPECT_FILL)
+                setMirror(true)
+                setScalingType(RendererCommon.ScalingType.SCALE_ASPECT_FILL)
 
-                }
-            },
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(200.dp),
-            onRelease = { renderer ->
-                try {
-                    renderer.release()
-                } catch (e: Exception) {
-                    Log.e("SDKInteractionScreen", "Error releasing renderer: ${e.localizedMessage}")
-                }
+            }
+        }, modifier = Modifier
+            .fillMaxWidth()
+            .height(200.dp), onRelease = { renderer ->
+            try {
+                renderer.release()
+            } catch (e: Exception) {
+                Log.e("SDKInteractionScreen", "Error releasing renderer: ${e.localizedMessage}")
+            }
 //                surfaceRendererRef.value = null
 //                isRendererInitialized = false
-            }
-        )
+        })
 
 //        OutlinedTextField(
 //            value = socketUrl,
@@ -446,30 +501,33 @@ fun SDKInteractionScreen(modifier: Modifier = Modifier) {
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Button(
                 onClick = {
-                    if (socketUrl.isNotBlank() && accessToken.isNotBlank()) {
-                        val roomOptions = GeoVisionRoomOptions(
-                            videoTrackCaptureDefaults = LocalVideoTrackOptions(
-                                position = CameraPosition.FRONT
+                    coroutineScope.launch {
+                        val tokenResult = fetchToken(xApiKey)
+                        if (tokenResult != null) {
+                            val (accessToken, roomName, identity) = tokenResult
+                            val roomOptions = GeoVisionRoomOptions(
+                                videoTrackCaptureDefaults = LocalVideoTrackOptions(
+                                    position = CameraPosition.FRONT
+                                )
                             )
-                        )
-                        VisionBotSDKManager.connectToGeoVisionRoom(
-                            context, socketUrl, accessToken, roomOptions
-                        )
-                    } else {
-                        addLog("URL or Token is empty!")
+                            VisionBotSDKManager.connectToGeoVisionRoom(
+                                context, geoVisionUrl, accessToken, roomOptions
+                            )
+                            addLog("Connecting to $roomName as $identity")
+                        } else {
+                            addLog("Failed to fetch token from API")
+                        }
                     }
-                },
-                enabled = !isConnecting && !isConnected
+                }, enabled = !isConnecting && !isConnected
             ) {
-                Text("Connect")
+                Text("Vinay Connect")
             }
             Button(
                 onClick = {
                     coroutineScope.launch { // disconnectFromGeoVisionRoom is now suspend
                         VisionBotSDKManager.disconnectFromGeoVisionRoom()
                     }
-                },
-                enabled = isConnected || isConnecting
+                }, enabled = isConnected || isConnecting
             ) {
                 Text("Disconnect")
             }
@@ -517,8 +575,7 @@ fun SDKInteractionScreen(modifier: Modifier = Modifier) {
                 } else {
                     addLog("Connect to a room before sending an image.")
                 }
-            },
-            enabled = isConnected // Only enable if connected
+            }, enabled = isConnected // Only enable if connected
         ) {
             Text("Pick & Send Image")
         }

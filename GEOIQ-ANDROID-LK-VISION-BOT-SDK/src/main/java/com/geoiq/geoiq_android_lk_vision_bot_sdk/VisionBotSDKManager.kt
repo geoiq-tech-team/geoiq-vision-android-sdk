@@ -436,11 +436,11 @@ object VisionBotSDKManager {
 //            TAG,
 //            "Checking if camera is enabled ${currentRoom?.localParticipant?.isCameraEnabled()}"
 //        )
-        return currentRoom?.localParticipant?.isCameraEnabled() == true
+        return currentRoom?.localParticipant?.isCameraEnabled == true
     }
 
     fun isMicrophoneEnabled(): Boolean {
-        return currentRoom?.localParticipant?.isMicrophoneEnabled() == true
+        return currentRoom?.localParticipant?.isMicrophoneEnabled == true
     }
 
     fun getRemoteParticipants(): Map<Participant.Identity, RemoteParticipant> {
