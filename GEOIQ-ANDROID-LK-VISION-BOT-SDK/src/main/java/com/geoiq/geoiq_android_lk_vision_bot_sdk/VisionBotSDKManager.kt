@@ -6,18 +6,26 @@ import android.util.Log
 import io.livekit.android.LiveKit
 import io.livekit.android.RoomOptions
 import io.livekit.android.annotations.Beta
-import io.livekit.android.room.Room
-import io.livekit.android.room.RoomException
 import io.livekit.android.events.RoomEvent
 import io.livekit.android.events.collect
+import io.livekit.android.room.Room
+import io.livekit.android.room.RoomException
+import io.livekit.android.room.datastream.StreamBytesOptions
+import io.livekit.android.room.participant.AudioTrackPublishDefaults
+import io.livekit.android.room.participant.ConnectionQuality
 import io.livekit.android.room.participant.LocalParticipant
 import io.livekit.android.room.participant.Participant
 import io.livekit.android.room.participant.RemoteParticipant
-import io.livekit.android.room.track.Track
-import io.livekit.android.room.track.VideoTrack
-import io.livekit.android.room.track.LocalVideoTrack
-import io.livekit.android.room.track.TrackPublication
+import io.livekit.android.room.participant.VideoTrackPublishDefaults
+import io.livekit.android.room.track.CameraPosition
 import io.livekit.android.room.track.DataPublishReliability
+import io.livekit.android.room.track.LocalAudioTrackOptions
+import io.livekit.android.room.track.LocalVideoTrack
+import io.livekit.android.room.track.LocalVideoTrackOptions
+import io.livekit.android.room.track.Track
+import io.livekit.android.room.track.TrackPublication
+import io.livekit.android.room.track.VideoTrack
+import io.livekit.android.rpc.RpcError
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -27,16 +35,8 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
-import java.io.File
-import io.livekit.android.room.datastream.StreamBytesOptions
-import io.livekit.android.room.participant.AudioTrackPublishDefaults
-import io.livekit.android.room.participant.ConnectionQuality
-import io.livekit.android.room.participant.VideoTrackPublishDefaults
-import io.livekit.android.room.track.CameraPosition
-import io.livekit.android.room.track.LocalAudioTrackOptions
-import io.livekit.android.room.track.LocalVideoTrackOptions
-import io.livekit.android.rpc.RpcError
 import kotlinx.coroutines.withContext
+import java.io.File
 import java.io.InputStream
 
 
@@ -52,7 +52,7 @@ typealias GeoVisionRoomOptions = RoomOptions
 typealias LocalAudioTrackOptions = LocalAudioTrackOptions
 typealias LocalVideoTrackOptions = LocalVideoTrackOptions
 typealias audioTrackPublishDefaults = AudioTrackPublishDefaults
-typealias videoTrackPublishDefaults= VideoTrackPublishDefaults
+typealias videoTrackPublishDefaults = VideoTrackPublishDefaults
 typealias CameraPosition = CameraPosition
 
 
@@ -108,7 +108,7 @@ sealed class GeoVisionEvent {
 object VisionBotSDKManager {
 
     private const val TAG = "GeoI_VB_SDK"
-    public var currentRoom: Room? = null
+    var currentRoom: Room? = null
     private var roomEventsJob: Job? = null
     private val sdkScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
     private val _events = MutableSharedFlow<GeoVisionEvent>(replay = 1, extraBufferCapacity = 5)
@@ -317,7 +317,7 @@ object VisionBotSDKManager {
 //                        )
                         event.transcriptionSegments.forEach { segment ->
 
-                            val senderIdentity = segment.id ?: participantId ?: "Unknown Sender"
+                            val senderIdentity = segment.id ?: "Unknown Sender"
                             val text = segment.text
                             val isFinal =
                                 segment.final // Assuming TranscriptionSegment has a 'final' property
@@ -537,6 +537,54 @@ object VisionBotSDKManager {
             inputStream?.close() // Ensure InputStream is closed
         }
     }
+
+
+    // Make this a suspend function to correctly call restartTrack
+    suspend fun flipCameraPosition(): Boolean {
+        val localParticipant = currentRoom?.localParticipant ?: run {
+            _events.tryEmit(GeoVisionEvent.Error("Cannot flip camera: Not connected.", null))
+            return false
+        }
+
+        // Find the camera track
+        val cameraTrack =
+            localParticipant.getTrackPublication(Track.Source.CAMERA)?.track as? LocalVideoTrack
+                ?: run {
+                    _events.tryEmit(
+                        GeoVisionEvent.Error(
+                            "Cannot flip camera: No local camera track found.", null
+                        )
+                    )
+                    return false
+                }
+
+        return try {
+            // Get the current camera options to determine its position
+            val currentOptions = cameraTrack.options
+
+            // Determine the new position
+            val newPosition = if (currentOptions.position == CameraPosition.FRONT) {
+                CameraPosition.BACK
+            } else {
+                CameraPosition.FRONT
+            }
+
+//            Log.d(TAG, "Attempting to flip camera to $newPosition")
+
+            cameraTrack.switchCamera(
+                // Create new options with only the changed parameter
+                position = newPosition
+            )
+
+//            Log.i(TAG, "Successfully flipped camera to $newPosition.")
+            true
+        } catch (e: Exception) {
+//            Log.e(TAG, "Failed to flip camera: ${e.message}", e)
+            _events.tryEmit(GeoVisionEvent.Error("Failed to flip camera: ${e.message}", e))
+            false
+        }
+    }
+
 
     fun shutdown() {
 //        Log.i(TAG, "Shutting down VisionBotSDKManager.")

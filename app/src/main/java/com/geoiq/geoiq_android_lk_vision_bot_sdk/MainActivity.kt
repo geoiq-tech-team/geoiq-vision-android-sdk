@@ -1,42 +1,57 @@
 package com.geoiq.geoiq_android_lk_vision_bot_sdk
 
 import android.Manifest
+import android.content.Context
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
+import android.provider.OpenableColumns
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Button
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import com.geoiq.geoiq_android_lk_vision_bot_sdk.ui.theme.GEOIQANDROIDLKVISIONBOTSDKTheme
-import kotlinx.coroutines.launch
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
-import androidx.compose.ui.viewinterop.AndroidView
 import io.livekit.android.renderer.SurfaceViewRenderer
-import java.io.File
-import android.content.Context
-import android.provider.OpenableColumns
+import io.livekit.android.room.track.Track
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import livekit.org.webrtc.RendererCommon
+import org.json.JSONObject
+import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
 import java.io.InputStream
-import org.json.JSONObject
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import java.net.URL
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import javax.net.ssl.HttpsURLConnection
 
 
@@ -56,8 +71,6 @@ class MainActivity : ComponentActivity() {
             Manifest.permission.CAMERA,
             Manifest.permission.RECORD_AUDIO,
             Manifest.permission.INTERNET,
-            // Manifest.permission.READ_EXTERNAL_STORAGE // Maybe for older devices accessing gallery
-            // Manifest.permission.READ_MEDIA_IMAGES // For Android 13+ Photo Picker
         )
         val permissionsNotGranted = permissionsToRequest.filter {
             ContextCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED
@@ -98,8 +111,9 @@ fun SDKInteractionScreen(modifier: Modifier = Modifier) {
     var isCameraEnabledUi by remember { mutableStateOf(VisionBotSDKManager.isCameraEnabled()) }
     var isMicrophoneEnabledUi by remember { mutableStateOf(VisionBotSDKManager.isMicrophoneEnabled()) }
     var isSpeaking by remember { mutableStateOf(VisionBotSDKManager.getIsSpeaking()) }
-    val xApiKey = "eyshaG9sbGVzX2FwaV9rZXk6c2VjcmV0X2FwaV9rZXk6c2VjcmV0"
-    val geoVisionUrl = "wss://lk-stg3.diq.geoiq.ai"
+    val xApiKey = "eyshaG9sbGVzX2Fwa1DopV9rCV12FwaV9rZXk6cassmmjas"
+    val geoVisionUrl = "wss://lk-stg4.diq.geoiq.ai"
+    var isFlipping by remember { mutableStateOf(false) }
 
     suspend fun fetchToken(xApiKey: String): Triple<String, String, String>? =
         withContext(Dispatchers.IO) {
@@ -171,7 +185,6 @@ fun SDKInteractionScreen(modifier: Modifier = Modifier) {
 
     fun createFileFromUri(context: Context, uri: Uri): File? {
         var fileName = "temp_picked_file" // Default filename
-        // Try to get the actual file name from the URI
         try {
             context.contentResolver.query(uri, null, null, null, null)?.use { cursor ->
                 if (cursor.moveToFirst()) {
@@ -202,7 +215,6 @@ fun SDKInteractionScreen(modifier: Modifier = Modifier) {
             return tempFile
         } catch (e: IOException) {
             Log.e("createFileFromUri", "Error copying file from URI: $uri", e)
-            // Clean up the temporary file if an error occurs during copy
             if (tempFile.exists()) {
                 tempFile.delete()
             }
@@ -221,11 +233,9 @@ fun SDKInteractionScreen(modifier: Modifier = Modifier) {
     val pickFileLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent(), onResult = { fileUri: Uri? ->
             if (fileUri != null) {
-                if (isConnected) { // Check if connected to the room
+                if (isConnected) {
                     coroutineScope.launch {
                         addLog("File URI selected: $fileUri")
-
-                        // Create a File object from the Uri
                         val tempFile: File? = createFileFromUri(context, fileUri)
 
                         if (tempFile != null && tempFile.exists()) {
@@ -299,7 +309,6 @@ fun SDKInteractionScreen(modifier: Modifier = Modifier) {
             Log.e("VisionSDK", "Error attaching renderer: ${e.localizedMessage}")
         }
         try {
-            // Re-init renderer every time it's a new instance (safe and idempotent)
             VisionBotSDKManager.getCurrentroom()?.initVideoRenderer(renderer)
             Log.d("VisionSDK", "Renderer initialized")
 
@@ -316,43 +325,39 @@ fun SDKInteractionScreen(modifier: Modifier = Modifier) {
         addLog("Initial camera state: camera enabled = ${VisionBotSDKManager.isCameraEnabled()}, mic enabled = ${VisionBotSDKManager.isMicrophoneEnabled()}")
 
         VisionBotSDKManager.events.collect { event ->
-            addLog("Vinay Event: $event")
-            addLog("vinay audio options ${VisionBotSDKManager.getCurrentroom()?.audioTrackCaptureDefaults}")
+            addLog("Event: $event")
             when (event) {
                 is GeoVisionEvent.Connecting -> {
-                    addLog("Vinay Connecting to ${event.url} with token ending in ...${event.tokenSnippet}")
+                    addLog("Connecting to ${event.url} with token ending in ...${event.tokenSnippet}")
                     connectionStatus = "Connecting..."
                     isConnecting = true
                     isConnected = false
                 }
 
                 is GeoVisionEvent.Connected -> {
-                    addLog("Vinay Connected to room: ${event.roomName}. Local User: ${event.localParticipant.identity}")
+                    addLog("Connected to room: ${event.roomName}. Local User: ${event.localParticipant.identity}")
                     connectionStatus = "Connected: ${event.roomName}"
                     isConnecting = false
                     isConnected = true
                     isCameraEnabledUi = VisionBotSDKManager.isCameraEnabled()
                     isMicrophoneEnabledUi = VisionBotSDKManager.isMicrophoneEnabled()
-
-                    // Initialize renderer on successful connection
                 }
 
                 is GeoVisionEvent.Disconnected -> {
-                    addLog("Vinay Disconnected. Reason: ${event.reason ?: "Client initiated"}")
+                    addLog("Disconnected. Reason: ${event.reason ?: "Client initiated"}")
                     connectionStatus = "Disconnected"
                     isConnecting = false
                     isConnected = false
                     isCameraEnabledUi = VisionBotSDKManager.isCameraEnabled()
                     isMicrophoneEnabledUi = VisionBotSDKManager.isMicrophoneEnabled()
 
-//
-//                    // Reset renderer state on disconnection
+                    // *** THE FIX IS HERE ***
+                    // On disconnect, just clear the image from the renderer.
+                    // DO NOT release it, because the view is still on the screen
+                    // and we want to reuse it for the next connection.
                     surfaceRendererRef.value?.let { renderer ->
                         try {
-                            // Clear any existing video tracks
                             renderer.clearImage()
-                            renderer.release()
-
                         } catch (e: Exception) {
                             Log.e(
                                 "SDKInteractionScreen",
@@ -360,37 +365,30 @@ fun SDKInteractionScreen(modifier: Modifier = Modifier) {
                             )
                         }
                     }
-
-                    // Mark that renderer needs reset for next connection
-//                    isRendererInitialized = false
-//                    rendererNeedsReset = true
-
                 }
 
                 is GeoVisionEvent.ParticipantJoined -> {
-                    addLog("Vinay Participant joined: ${event.participant.identity}")
+                    addLog("Participant joined: ${event.participant.identity}")
                     coroutineScope.launch {
-                        addLog("Vinay Sending messsage on Connect  ")
+                        addLog("Sending messsage on Connect")
                         VisionBotSDKManager.getLocalParticipant()?.publishData(
                             "BOT_CONNECTED".toByteArray(Charsets.UTF_8),
-                            DataPublishReliability.RELIABLE, // Ensure this enum is correctly imported/available
-                            "vinay_bot_connected" // topic
+                            DataPublishReliability.RELIABLE,
+                            "vinay_bot_connected"
                         )
                     }
                 }
 
                 is GeoVisionEvent.ParticipantAttributesChanged -> {
-                    addLog("Vinay Participant joined: ${event.participant.identity}")
+                    addLog("Participant attributes changed: ${event.participant.identity}")
                 }
 
                 is GeoVisionEvent.ParticipantLeft -> {
-                    addLog("Vinay Participant left: ${event.participant.identity}")
+                    addLog("Participant left: ${event.participant.identity}")
                 }
 
                 is GeoVisionEvent.TrackPublished -> {
                     addLog("Local track published: ${event.publication.source} by ${event.participant.identity}")
-                    // Consider if VisionBotSDKManager.setMicrophoneEnabled(true) is always desired here.
-                    // It might be better to let the user control it or handle based on specific track types.
 
                     if (event.publication.source?.name?.lowercase() == "camera") {
                         val localParticipant =
@@ -400,6 +398,7 @@ fun SDKInteractionScreen(modifier: Modifier = Modifier) {
 
                         if (localTrack is LocalVideoTrack) {
                             attachLocalVideo(localTrack)
+                            isCameraEnabledUi = true
                         } else {
                             addLog("Expected LocalVideoTrack but got ${localTrack?.javaClass?.simpleName}")
                         }
@@ -420,31 +419,29 @@ fun SDKInteractionScreen(modifier: Modifier = Modifier) {
                 }
 
                 is GeoVisionEvent.TrackSubscribed -> {
-                    addLog("VinayTrack subscribed: ${event.track.name} from ${event.participant.identity}")
+                    addLog("Track subscribed: ${event.track.name} from ${event.participant.identity}")
                 }
 
                 is GeoVisionEvent.TrackUnsubscribed -> {
-                    addLog("Vinay Track unsubscribed: ${event.track.name} from ${event.participant.identity}")
+                    addLog("Track unsubscribed: ${event.track.name} from ${event.participant.identity}")
                 }
 
                 is GeoVisionEvent.ConnectionQualityChanged -> {
-                    addLog("Vinay Connection Quality changed: ${event.quality} from ${event.participant.identity}")
-
+                    addLog("Connection Quality changed: ${event.quality} for ${event.participant.identity}")
                     if (event.participant is LocalParticipant) connectQuality = event.quality
                 }
 
                 is GeoVisionEvent.ActiveSpeakersChanged -> {
                     isSpeaking = VisionBotSDKManager.getIsSpeaking()
-                    addLog("Vinay Active speakers: ${event.speakers.joinToString { it.identity?.toString() ?: "N/A" }}")
+                    addLog("Active speakers: ${event.speakers.joinToString { it.identity?.toString() ?: "N/A" }}")
                 }
 
                 is GeoVisionEvent.TranscriptionReceived -> {
-                    addLog("Vinay Transcription: ${event.senderId} ${event.message}")
-
+                    addLog("Transcription: ${event.senderId} ${event.message}")
                 }
 
                 is GeoVisionEvent.Error -> {
-                    addLog("Vinay ERROR: ${event.message} ${event.exception?.localizedMessage ?: ""}")
+                    addLog("ERROR: ${event.message} ${event.exception?.localizedMessage ?: ""}")
                     if (event.message.contains("Failed to connect") || event.message.contains("Connection setup failed")) {
                         isConnecting = false
                         isConnected = false
@@ -453,7 +450,7 @@ fun SDKInteractionScreen(modifier: Modifier = Modifier) {
                 }
 
                 is GeoVisionEvent.CustomMessageReceived -> {
-                    addLog("Vinay GeoIQ Received message on my-topic: ${event.message}")
+                    addLog("Received message on topic '${event.topic}': ${event.message}")
                 }
             }
         }
@@ -470,33 +467,19 @@ fun SDKInteractionScreen(modifier: Modifier = Modifier) {
             SurfaceViewRenderer(ctx).apply {
                 surfaceRendererRef.value = this
                 setEnableHardwareScaler(true)
-
                 setMirror(true)
                 setScalingType(RendererCommon.ScalingType.SCALE_ASPECT_FILL)
-
             }
         }, modifier = Modifier
             .fillMaxWidth()
             .height(200.dp), onRelease = { renderer ->
+            // This is the correct place to release the renderer, when the view is destroyed.
             try {
                 renderer.release()
             } catch (e: Exception) {
                 Log.e("SDKInteractionScreen", "Error releasing renderer: ${e.localizedMessage}")
             }
-//                surfaceRendererRef.value = null
-//                isRendererInitialized = false
         })
-
-//        OutlinedTextField(
-//            value = socketUrl,
-//            onValueChange = { socketUrl = it },
-//            label = { Text("Socket URL") }
-//        )
-//        OutlinedTextField(
-//            value = accessToken,
-//            onValueChange = { accessToken = it },
-//            label = { Text("Access Token") }
-//        )
 
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Button(
@@ -520,11 +503,11 @@ fun SDKInteractionScreen(modifier: Modifier = Modifier) {
                     }
                 }, enabled = !isConnecting && !isConnected
             ) {
-                Text("Vinay Connect")
+                Text("Connect")
             }
             Button(
                 onClick = {
-                    coroutineScope.launch { // disconnectFromGeoVisionRoom is now suspend
+                    coroutineScope.launch {
                         VisionBotSDKManager.disconnectFromGeoVisionRoom()
                     }
                 }, enabled = isConnected || isConnecting
@@ -535,17 +518,13 @@ fun SDKInteractionScreen(modifier: Modifier = Modifier) {
 
         Text("Status: $connectionStatus")
         Text("Speaking: $isSpeaking")
-        Text("Connection quality: ${connectQuality == ConnectionQuality.EXCELLENT}")
+        Text("Connection quality: ${connectQuality}")
 
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Button(onClick = {
                 coroutineScope.launch {
-                    // val newCameraState = !isCameraEnabledUi // UI state might be stale
-                    // It's safer to toggle based on the SDK's current reported state if possible,
-                    // or just send the toggle command and let events update the UI.
                     val success =
                         VisionBotSDKManager.setCameraEnabled(!VisionBotSDKManager.isCameraEnabled())
-                    // isCameraEnabledUi will be updated by TrackPublished/Unpublished events
                     addLog("Set Camera toggle: SDK reported $success. New SDK state: ${VisionBotSDKManager.isCameraEnabled()}")
                 }
             }) {
@@ -556,72 +535,65 @@ fun SDKInteractionScreen(modifier: Modifier = Modifier) {
                 coroutineScope.launch {
                     val success =
                         VisionBotSDKManager.setMicrophoneEnabled(!VisionBotSDKManager.isMicrophoneEnabled())
-                    // isMicrophoneEnabledUi will be updated by events
                     addLog("Set Mic toggle: SDK reported $success. New SDK state: ${VisionBotSDKManager.isMicrophoneEnabled()}")
                 }
             }) {
                 Text(if (isMicrophoneEnabledUi) "Mute Mic" else "Unmute Mic")
             }
+            Button(
+                enabled = !isFlipping, onClick = {
+                    coroutineScope.launch {
+                        isFlipping = true
+                        try {
+                            val success = VisionBotSDKManager.flipCameraPosition()
+                            if (success) {
+                                val videoTrack = VisionBotSDKManager.getLocalParticipant()
+                                    ?.getOrCreateDefaultVideoTrack()
+                                if (videoTrack != null) {
+
+                                    Log.d(
+                                        "SDKInteractionScreen",
+                                        "Flipped camera. Mirroring set to: ${videoTrack.options.position}"
+                                    )
+
+                                    val isFrontCamera =
+                                        videoTrack.options.position == CameraPosition.FRONT
+                                    surfaceRendererRef.value?.setMirror(!isFrontCamera)
+                                    Log.d(
+                                        "SDKInteractionScreen",
+                                        "Flipped camera. Mirroring set to: $isFrontCamera"
+                                    )
+                                    addLog("Camera flipped successfully.")
+                                } else {
+                                    addLog("Flipped camera, but failed to get video track.")
+                                }
+                            } else {
+                                addLog("Failed to flip camera.")
+                            }
+                        } catch (e: Exception) {
+                            addLog("An error occurred while flipping camera: ${e.message}")
+                            Log.e("SDKInteractionScreen", "Flip camera error", e)
+                        } finally {
+                            isFlipping = false
+                        }
+                    }
+                }) {
+                Text("Flip")
+            }
         }
 
         Text("Camera: ${if (isCameraEnabledUi) "ON" else "OFF"} | Mic: ${if (isMicrophoneEnabledUi) "ON" else "OFF"}")
 
-
-        // Button to pick and send an image
         Button(
             onClick = {
                 if (isConnected) {
-                    pickFileLauncher.launch("image/*") // Launches the image picker
+                    pickFileLauncher.launch("image/*")
                 } else {
                     addLog("Connect to a room before sending an image.")
                 }
-            }, enabled = isConnected // Only enable if connected
+            }, enabled = isConnected
         ) {
             Text("Pick & Send Image")
         }
-
-//        Button(
-//            onClick = {
-//                if (isConnected) {
-//                    coroutineScope.launch {
-//                        addLog("Attempting to send a file via RPC call")
-//                        try {
-//                            performRpcCall()
-//                            addLog("RPC call performed successfully.")
-//                        } catch (e: Exception) {
-//                            addLog("RPC call failed: ${e.localizedMessage}")
-//                        }
-//                    }
-//                } else {
-//                    addLog("Connect to a room before sending an image.")
-//                }
-//            },
-//            enabled = isConnected // Only enable if connected
-//        ) {
-//            Text("Perform RPC")
-//        }
-
-
-        Button(onClick = {
-            coroutineScope.launch {
-                VisionBotSDKManager.shutdown()
-                addLog("Shutdown SDK called from button")
-            }
-        }) {
-            Text("Shutdown SDK")
-        }
-
-        LazyColumn(
-            modifier = Modifier
-                .weight(1f)
-                .fillMaxWidth()
-        ) {
-            items(eventLog.reversed()) { logEntry -> // Reversed to show newest logs first
-                Text(logEntry, style = MaterialTheme.typography.bodySmall)
-                Divider()
-            }
-        }
     }
 }
-
-
