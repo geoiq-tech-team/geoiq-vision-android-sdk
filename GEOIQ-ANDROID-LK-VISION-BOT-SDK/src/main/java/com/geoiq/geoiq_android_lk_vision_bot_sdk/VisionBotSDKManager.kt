@@ -20,6 +20,7 @@ import io.livekit.android.room.participant.VideoTrackPublishDefaults
 import io.livekit.android.room.track.CameraPosition
 import io.livekit.android.room.track.DataPublishReliability
 import io.livekit.android.room.track.LocalAudioTrackOptions
+import io.livekit.android.room.track.LocalTrackPublication
 import io.livekit.android.room.track.LocalVideoTrack
 import io.livekit.android.room.track.LocalVideoTrackOptions
 import io.livekit.android.room.track.Track
@@ -64,9 +65,16 @@ sealed class GeoVisionEvent {
     data class Disconnected(val reason: String?) : GeoVisionEvent()
     data class ParticipantJoined(val participant: RemoteParticipant) : GeoVisionEvent()
     data class ParticipantLeft(val participant: RemoteParticipant) : GeoVisionEvent()
+
+    data class LocalTrackSubscribed(
+         val publication: LocalTrackPublication, val participant: LocalParticipant
+    ) : GeoVisionEvent()
+
+
     data class TrackPublished(
         val publication: TrackPublication, val participant: LocalParticipant
     ) : GeoVisionEvent()
+
 
     data class TrackUnpublished(
         val publication: TrackPublication, val participant: RemoteParticipant
@@ -208,6 +216,14 @@ object VisionBotSDKManager {
                         }
                     }
 
+                    is RoomEvent.LocalTrackSubscribed ->{
+                        _events.tryEmit(
+                            GeoVisionEvent.LocalTrackSubscribed(
+                                event.publication, event.participant
+                            )
+                        )
+                    }
+
                     is RoomEvent.TrackPublished -> {
                         if (event.participant is LocalParticipant) {
 //                            Log.i(
@@ -317,7 +333,7 @@ object VisionBotSDKManager {
 //                        )
                         event.transcriptionSegments.forEach { segment ->
 
-                            val senderIdentity = segment.id ?: "Unknown Sender"
+                            val senderIdentity = segment.id
                             val text = segment.text
                             val isFinal =
                                 segment.final // Assuming TranscriptionSegment has a 'final' property

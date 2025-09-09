@@ -111,51 +111,74 @@ fun SDKInteractionScreen(modifier: Modifier = Modifier) {
     var isCameraEnabledUi by remember { mutableStateOf(VisionBotSDKManager.isCameraEnabled()) }
     var isMicrophoneEnabledUi by remember { mutableStateOf(VisionBotSDKManager.isMicrophoneEnabled()) }
     var isSpeaking by remember { mutableStateOf(VisionBotSDKManager.getIsSpeaking()) }
+    var agentState by remember { mutableStateOf("hi") }
     val xApiKey = "eyshaG9sbGVzX2Fwa1DopV9rCV12FwaV9rZXk6cassmmjas"
     val geoVisionUrl = "wss://lk-stg4.diq.geoiq.ai"
+//    val xApiKey = "eyshaG9sbGVzX2FwaV9rZXk6c2VjaLl8jhss"
+//    val geoVisionUrl = "wss://lk-stg2.diq.geoiq.ai"
+
     var isFlipping by remember { mutableStateOf(false) }
 
     suspend fun fetchToken(xApiKey: String): Triple<String, String, String>? =
         withContext(Dispatchers.IO) {
 
-            val metadataJson = JSONObject()
-            metadataJson.put("event", "vaep_home_page")
-            metadataJson.put("va_data", JSONObject(mapOf("aiContext" to JSONObject())))
-            metadataJson.put("referrer_page", "home")
+            val newMetadataJson = JSONObject()
+
+            newMetadataJson.put("event", "vaep_home_page")
+
+            val vaDataJson = JSONObject()
+            val locationAddressJson = JSONObject()
+            val addressLinesJson = JSONObject()
+            addressLinesJson.put("0", "560102, Bengaluru, Karnataka, 560102")
+            locationAddressJson.put("addressLines", addressLinesJson)
+            locationAddressJson.put("adminArea", "")
+            locationAddressJson.put("countryCode", "")
+            locationAddressJson.put("countryName", "")
+            locationAddressJson.put("featureName", "")
+            locationAddressJson.put("hasLatitude", true)
+            locationAddressJson.put("hasLongitude", true)
+            locationAddressJson.put("isUserManualPreference", false)
+            locationAddressJson.put("latitude", 12.910355908206624)
+            locationAddressJson.put("locality", "")
+            locationAddressJson.put("longitude", 77.64460510218187)
+            locationAddressJson.put("maxAddressLineIndex", 0)
+            locationAddressJson.put("postalCode", "560102")
+            locationAddressJson.put("premises", "Bengaluru, Karnataka")
+            locationAddressJson.put("subAdminArea", "")
+            locationAddressJson.put("subLocality", "")
+            locationAddressJson.put("thoroughfare", "")
+            vaDataJson.put("locationAddress", locationAddressJson)
+            newMetadataJson.put("va_data", vaDataJson)
 
             val junoMap = mapOf(
-                "result" to mapOf(
-                    "x-country-code-override" to "IN",
-                    "x-app-version" to "6.3.1 (25071816)",
-                    "x-session-token" to "54c12872-43ff-46b9-a080-7198e1c0cf85",
-                    "brand" to "ios",
-                    "x-customer-type" to "REPEAT",
-                    "accept-encoding" to "gzip",
-                    "x-country-code" to "IN",
-                    "udid" to "00000000-0000-0000-0000-000000000000",
-                    "x-build-version" to "25071816",
-                    "x-accept-language" to "en",
-                    "device-id" to "9433A241-E457-46A8-B544-EB04B4682A2D",
-                    "content-type" to "application/json",
-                    "x-api-client" to "ios",
-                    "api_key" to "valyoo123",
-                    "my_name" to "Vinay",
-                )
+                "X-Session-Token" to "b6da70eb-c979-4ddf-9b65-7ca9b591cd80",
+                "x-api-client" to "mobilesite",
+                "X-Country-Code" to "IN",
+                "x-country-code-override" to "IN",
+                "accept-language" to "en",
+                "appversion" to "0",
+                "x-customer-type" to "REPEAT",
+                "x-customer-tier-name" to ""
             )
-            metadataJson.put("juno", JSONObject(junoMap))
+            val junoJson = JSONObject()
+            junoJson.put("result", JSONObject(junoMap))
+            junoJson.put("status", 200)
+            junoJson.put("trace_id", "")
+            newMetadataJson.put("juno", junoJson)
 
 
-            val url = URL("https://beapis-in.staging.geoiq.ai/vision/user/v2.0/getsdkaccesstoken")
+//            val url = URL("https://beapis-in.staging.geoiq.ai/vision/user/v2.0/getsdkaccesstoken")
+            val url = URL("https://lk-va-token.diq.geoiq.ai/stg/v1/token")
             val conn = url.openConnection() as HttpsURLConnection
             conn.requestMethod = "POST"
             conn.setRequestProperty("Content-Type", "application/json")
             conn.setRequestProperty("x-api-key", xApiKey)
-            conn.setRequestProperty("metadata", metadataJson.toString())
+            conn.setRequestProperty("metadata", newMetadataJson.toString())
             conn.doOutput = true
 
 
             val finalBody = JSONObject()
-            finalBody.put("metadata", metadataJson)
+            finalBody.put("metadata", newMetadataJson)
 
             conn.outputStream.bufferedWriter().use {
                 it.write(finalBody.toString())
@@ -368,7 +391,8 @@ fun SDKInteractionScreen(modifier: Modifier = Modifier) {
                 }
 
                 is GeoVisionEvent.ParticipantJoined -> {
-                    addLog("Participant joined: ${event.participant.identity}")
+                    addLog("Participant joined: ${event.participant.attributes}")
+
                     coroutineScope.launch {
                         addLog("Sending messsage on Connect")
                         VisionBotSDKManager.getLocalParticipant()?.publishData(
@@ -381,6 +405,23 @@ fun SDKInteractionScreen(modifier: Modifier = Modifier) {
 
                 is GeoVisionEvent.ParticipantAttributesChanged -> {
                     addLog("Participant attributes changed: ${event.participant.identity}")
+
+                    val participant = event.participant
+                    val changedAttributes = event.changedAttributes
+
+                    // Check if the agent state attribute was the one that changed
+                    if ("lk.agent.state" in changedAttributes) {
+                        agentState = changedAttributes["lk.agent.state"].toString()
+
+                        // You can also get it directly from the participant's attributes
+                        val currentAgentState = participant.attributes["lk.agent.state"]
+
+                        // Update your UI based on the new state
+                        // Example:
+                        if (currentAgentState == "thinking") {
+                            // Show a "typing" or "thinking" indicator
+                        }
+                    }
                 }
 
                 is GeoVisionEvent.ParticipantLeft -> {
@@ -390,6 +431,28 @@ fun SDKInteractionScreen(modifier: Modifier = Modifier) {
                 is GeoVisionEvent.TrackPublished -> {
                     addLog("Local track published: ${event.publication.source} by ${event.participant.identity}")
 
+//                    if (event.publication.source?.name?.lowercase() == "camera") {
+//                        val localParticipant =
+//                            VisionBotSDKManager.getCurrentroom()?.localParticipant
+//                        val localTrack =
+//                            localParticipant?.getTrackPublication(event.publication.source)?.track
+//
+//                        if (localTrack is LocalVideoTrack) {
+//                            attachLocalVideo(localTrack)
+//                            isCameraEnabledUi = true
+//                        } else {
+//                            addLog("Expected LocalVideoTrack but got ${localTrack?.javaClass?.simpleName}")
+//                        }
+//                    } else if (event.publication.source?.name?.lowercase() == "microphone") {
+//
+//
+//                        isMicrophoneEnabledUi = true // Reflect mic is published
+//                    }
+                }
+
+
+                is GeoVisionEvent.LocalTrackSubscribed ->{
+                    addLog("Local track subscribed: ${event.publication.source.name} by ${event.participant.identity}")
                     if (event.publication.source?.name?.lowercase() == "camera") {
                         val localParticipant =
                             VisionBotSDKManager.getCurrentroom()?.localParticipant
@@ -519,6 +582,7 @@ fun SDKInteractionScreen(modifier: Modifier = Modifier) {
         Text("Status: $connectionStatus")
         Text("Speaking: $isSpeaking")
         Text("Connection quality: ${connectQuality}")
+        Text("Agent Connection: ${agentState}")
 
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Button(onClick = {
