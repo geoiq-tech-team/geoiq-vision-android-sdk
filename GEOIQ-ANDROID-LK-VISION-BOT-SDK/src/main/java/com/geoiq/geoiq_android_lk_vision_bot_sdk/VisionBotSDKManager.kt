@@ -612,6 +612,15 @@ object VisionBotSDKManager {
     }
 
 
+
+
+    // This Map and Function have been added to track initialized renderers, because Livekit doesn't provide a way to check if a renderer is already initialized.
+    // We use a WeakHashMap to avoid memory leaks by allowing renderers to be garbage collected when no longer in use.
+    // This ensures that we don't attempt to re-initialize a renderer that has already been set up, preventing potential exceptions and redundant operations.
+    // This is particularly useful in scenarios where renderers may be reused or reattached, such as during view recycling in lists or when switching between different video views.
+    // As of now, this tracking mechanism is internal to the SDK manager and does not expose any public variable for checking initialization status.
+
+
     private val initializedRenderers = Collections.newSetFromMap(
         WeakHashMap<RendererCommon.RendererEvents, Boolean>()
     )
