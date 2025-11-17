@@ -38,7 +38,6 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import com.geoiq.geoiq_android_lk_vision_bot_sdk.ui.theme.GEOIQANDROIDLKVISIONBOTSDKTheme
 import io.livekit.android.renderer.SurfaceViewRenderer
-import io.livekit.android.room.track.Track
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -112,8 +111,10 @@ fun SDKInteractionScreen(modifier: Modifier = Modifier) {
     var isMicrophoneEnabledUi by remember { mutableStateOf(VisionBotSDKManager.isMicrophoneEnabled()) }
     var isSpeaking by remember { mutableStateOf(VisionBotSDKManager.getIsSpeaking()) }
     var agentState by remember { mutableStateOf("hi") }
-    val xApiKey = "eyshaG9sbGVzX2Fwa1DopV9rCV12FwaV9rZXk6cassmmjas"
-    val geoVisionUrl = "wss://lk-stg4.diq.geoiq.ai"
+    val xApiKey = "eyc546bb1d98c097899a2c474e0b77f8e45a23ff729c"
+    val geoVisionUrl = "wss://lk-stg7.diq.geoiq.ai"
+//    val xApiKey = "eyshaG9sbGVzX2Fwa1DopV9rCV12FwaV9rZXk6cassmmjas"
+//    val geoVisionUrl = "wss://lk-stg4.diq.geoiq.ai"
 //    val xApiKey = "eyshaG9sbGVzX2FwaV9rZXk6c2VjaLl8jhss"
 //    val geoVisionUrl = "wss://lk-stg2.diq.geoiq.ai"
 
@@ -327,17 +328,18 @@ fun SDKInteractionScreen(modifier: Modifier = Modifier) {
         }
         try {
             videoTrack.addRenderer(renderer)
+            videoTrack.addRenderer(renderer)
             Log.d("VisionSDK", "Track attached")
         } catch (e: Exception) {
             Log.e("VisionSDK", "Error attaching renderer: ${e.localizedMessage}")
         }
         try {
-            VisionBotSDKManager.getCurrentroom()?.initVideoRenderer(renderer)
+            VisionBotSDKManager.initializeVideoRenderer(renderer)
             Log.d("VisionSDK", "Renderer initialized")
 
         } catch (e: Exception) {
             Log.e("VisionSDK", "Error initializing renderer: ${e.localizedMessage}")
-            return
+            return 
         }
     }
 
@@ -658,6 +660,21 @@ fun SDKInteractionScreen(modifier: Modifier = Modifier) {
             }, enabled = isConnected
         ) {
             Text("Pick & Send Image")
+        }
+
+        Button(
+            onClick = {
+                val renderer = surfaceRendererRef.value
+
+                if (renderer == null) {
+                    Log.e("VisionSDK", "Renderer is not initialized")
+                    return@Button
+                }
+
+                VisionBotSDKManager.initializeVideoRenderer(renderer)
+            }, enabled = isConnected
+        ) {
+            Text("Vinay Checks")
         }
     }
 }

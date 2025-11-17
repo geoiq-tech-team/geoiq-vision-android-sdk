@@ -8,6 +8,7 @@ import io.livekit.android.RoomOptions
 import io.livekit.android.annotations.Beta
 import io.livekit.android.events.RoomEvent
 import io.livekit.android.events.collect
+import io.livekit.android.renderer.TextureViewRenderer
 import io.livekit.android.room.Room
 import io.livekit.android.room.RoomException
 import io.livekit.android.room.datastream.StreamBytesOptions
@@ -37,8 +38,12 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import livekit.org.webrtc.RendererCommon
+import livekit.org.webrtc.SurfaceViewRenderer
 import java.io.File
 import java.io.InputStream
+import java.util.Collections
+import java.util.WeakHashMap
 
 
 typealias Track = Track
@@ -405,6 +410,11 @@ object VisionBotSDKManager {
         sdkScope.launch {
 //            setCameraEnabled(false) // Ensure camera is off before disconnecting
 //            setMicrophoneEnabled(false) // Ensure microphone is off before disconnecting
+
+
+
+            // Clear the tracking map so renderers can be re-initialized on next connect
+            initializedRenderers.clear()
             roomToDisconnect.disconnect()
             // The Disconnected event from roomInstance.events.collect will handle cleanup
         }
@@ -600,6 +610,53 @@ object VisionBotSDKManager {
             false
         }
     }
+
+
+    private val initializedRenderers = Collections.newSetFromMap(
+        WeakHashMap<RendererCommon.RendererEvents, Boolean>()
+    )
+
+    fun initializeVideoRenderer( renderer: RendererCommon.RendererEvents){
+        val room = currentRoom ?: return
+
+        // 1. The Optimization Check
+        if (initializedRenderers.contains(renderer)) {
+            Log.d(TAG, "Renderer already initialized. Skipping initVideoRenderer call.")
+            return
+        }
+
+        try {
+            // 2. Perform the initialization
+            //  Type Check & Dispatch
+            // Kotlin "Smart Cast" automatically casts 'renderer' inside the blocks
+            when (renderer) {
+                is SurfaceViewRenderer -> {
+                    room.initVideoRenderer(renderer) // Calls initVideoRenderer(SurfaceViewRenderer)
+                }
+                is TextureViewRenderer -> {
+                    room.initVideoRenderer(renderer) // Calls initVideoRenderer(TextureViewRenderer)
+                }
+                else -> {
+                    Log.w(TAG, "Unsupported renderer type: ${renderer::class.java.simpleName}")
+                    return
+                }
+            }
+
+            // 3. Mark as initialized
+            initializedRenderers.add(renderer)
+            Log.d(TAG, "Renderer successfully initialized and tracked.")
+
+        } catch (e: Exception) {
+            // Handle the case where it might have been initialized externally or failed
+            if (e.message?.contains("already initialized") == true) {
+                initializedRenderers.add(renderer) // Sync our state just in case
+            } else {
+                Log.e(TAG, "Failed to initialize renderer: ${e.message}")
+            }
+        }
+    }
+
+
 
 
     fun shutdown() {
