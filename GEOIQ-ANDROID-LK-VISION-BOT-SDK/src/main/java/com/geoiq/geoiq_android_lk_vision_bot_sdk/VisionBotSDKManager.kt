@@ -126,6 +126,7 @@ object VisionBotSDKManager {
     private val sdkScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
     private val _events = MutableSharedFlow<GeoVisionEvent>(replay = 1, extraBufferCapacity = 5)
     val events: SharedFlow<GeoVisionEvent> = _events.asSharedFlow()
+    private val sendTextTopic = "lk_va_publish"
 
     @OptIn(Beta::class)
     fun connectToGeoVisionRoom(
@@ -375,7 +376,7 @@ object VisionBotSDKManager {
                 )
 
                 roomInstance.registerTextStreamHandler(
-                    topic = "lk_va_send_text",
+                    topic = sendTextTopic,
                     handler = { reader, info ->
                         // You generally need to launch a coroutine here because stream reading is suspending
                         sdkScope.launch {
@@ -396,7 +397,7 @@ object VisionBotSDKManager {
                                 )
                             )
 
-//                             Log.i("DataStream", "Full text received: ${allText.joinToString("")}")
+//                             Log.i("DataStream", "Received message on topic: ${reader.info.topic} Full text received: ${allText.joinToString("")}")
                         }
                     }
                 )
@@ -441,7 +442,7 @@ object VisionBotSDKManager {
 
             // Clear the tracking map so renderers can be re-initialized on next connect
             initializedRenderers.clear()
-            roomToDisconnect.unregisterTextStreamHandler(topic = "lk_va_send_text")
+            roomToDisconnect.unregisterTextStreamHandler(topic = sendTextTopic)
             roomToDisconnect.disconnect()
 
             // The Disconnected event from roomInstance.events.collect will handle cleanup
