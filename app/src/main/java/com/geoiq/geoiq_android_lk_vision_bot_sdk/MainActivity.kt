@@ -111,12 +111,14 @@ fun SDKInteractionScreen(modifier: Modifier = Modifier) {
     var isMicrophoneEnabledUi by remember { mutableStateOf(VisionBotSDKManager.isMicrophoneEnabled()) }
     var isSpeaking by remember { mutableStateOf(VisionBotSDKManager.getIsSpeaking()) }
     var agentState by remember { mutableStateOf("hi") }
-    val xApiKey = "eyc546bb1d98c097899a2c474e0b77f8e45a23ff729c"
-    val geoVisionUrl = "wss://lk-stg7.diq.geoiq.ai"
-//    val xApiKey = "eyshaG9sbGVzX2Fwa1DopV9rCV12FwaV9rZXk6cassmmjas"
-//    val geoVisionUrl = "wss://lk-stg4.diq.geoiq.ai"
+//    val xApiKey = "eyc546bb1d98c097899a2c474e0b77f8e45a23ff729c"
+//    val geoVisionUrl = "wss://lk-stg7.diq.geoiq.ai"
+    val xApiKey = "eyshaG9sbGVzX2Fwa1DopV9rCV12FwaV9rZXk6cassmmjas"
+    val geoVisionUrl = "wss://lk-stg4.diq.geoiq.ai"
 //    val xApiKey = "eyshaG9sbGVzX2FwaV9rZXk6c2VjaLl8jhss"
 //    val geoVisionUrl = "wss://lk-stg2.diq.geoiq.ai"
+//    val xApiKey = "eybu1H11bGVzX1DopV9rCV16n5VjcmV0"
+//    val geoVisionUrl = "wss://lk-preprod.diq.geoiq.ai"
 
     var isFlipping by remember { mutableStateOf(false) }
 
@@ -125,47 +127,53 @@ fun SDKInteractionScreen(modifier: Modifier = Modifier) {
 
             val newMetadataJson = JSONObject()
 
-            newMetadataJson.put("event", "vaep_home_page")
+// 1. Update Event Name
+            newMetadataJson.put("event", "vaep_addon_lens_package_page")
 
-            val vaDataJson = JSONObject()
-            val locationAddressJson = JSONObject()
-            val addressLinesJson = JSONObject()
-            addressLinesJson.put("0", "560102, Bengaluru, Karnataka, 560102")
-            locationAddressJson.put("addressLines", addressLinesJson)
-            locationAddressJson.put("adminArea", "")
-            locationAddressJson.put("countryCode", "")
-            locationAddressJson.put("countryName", "")
-            locationAddressJson.put("featureName", "")
-            locationAddressJson.put("hasLatitude", true)
-            locationAddressJson.put("hasLongitude", true)
-            locationAddressJson.put("isUserManualPreference", false)
-            locationAddressJson.put("latitude", 12.910355908206624)
-            locationAddressJson.put("locality", "")
-            locationAddressJson.put("longitude", 77.64460510218187)
-            locationAddressJson.put("maxAddressLineIndex", 0)
-            locationAddressJson.put("postalCode", "560102")
-            locationAddressJson.put("premises", "Bengaluru, Karnataka")
-            locationAddressJson.put("subAdminArea", "")
-            locationAddressJson.put("subLocality", "")
-            locationAddressJson.put("thoroughfare", "")
-            vaDataJson.put("locationAddress", locationAddressJson)
-            newMetadataJson.put("va_data", vaDataJson)
-
+// 2. Build 'juno' object (Updated headers/metadata)
             val junoMap = mapOf(
-                "X-Session-Token" to "b6da70eb-c979-4ddf-9b65-7ca9b591cd80",
-                "x-api-client" to "mobilesite",
-                "X-Country-Code" to "IN",
                 "x-country-code-override" to "IN",
                 "accept-language" to "en",
-                "appversion" to "0",
                 "x-customer-type" to "REPEAT",
-                "x-customer-tier-name" to ""
+                "x-session-token" to "8e6fb0d3-5e8d-46e6-93af-ffcba73fb261",
+                "appversion" to "5.2.9 (251120001)",
+                "Accept-Encoding" to "gzip",
+                "X-Build-Version" to "251120001",
+                "api_key" to "valyoo123",
+                "x-accept-language" to "en",
+                "x-api-client" to "android",
+                "model" to "moto g35 5G",
+                "udid" to "2b7b7751b6fa6f4c",
+                "x-country-code" to "IN",
+                "brand" to "motorola",
+                "Content-Type" to "application/json",
+                "x-app-version" to "5.2.9 (251120001)"
             )
             val junoJson = JSONObject()
             junoJson.put("result", JSONObject(junoMap))
-            junoJson.put("status", 200)
-            junoJson.put("trace_id", "")
             newMetadataJson.put("juno", junoJson)
+
+// 3. Build 'va_data' object (New structure with aiContext)
+            val vaDataJson = JSONObject()
+
+          // Construct nested aiContext
+            val filtersJson = JSONObject()
+            filtersJson.put("powerType", "single_vision")
+
+            val aiContextJson = JSONObject()
+            aiContextJson.put("context", "package")
+            aiContextJson.put("contextId", 142515.0)
+            aiContextJson.put("filters", filtersJson)
+
+            vaDataJson.put("aiContext", aiContextJson)
+            vaDataJson.put("deviceLanguage", "en")
+
+            newMetadataJson.put("va_data", vaDataJson)
+
+           // 4. Add new top-level fields
+            newMetadataJson.put("pid", 131)
+            newMetadataJson.put("job_id", "vision_AJ_zxR4vDaUn6MZ")
+            newMetadataJson.put("room_name", "BNDW5@BLD$")
 
 
 //            val url = URL("https://beapis-in.staging.geoiq.ai/vision/user/v2.0/getsdkaccesstoken")
@@ -327,7 +335,6 @@ fun SDKInteractionScreen(modifier: Modifier = Modifier) {
             return
         }
         try {
-            videoTrack.addRenderer(renderer)
             videoTrack.addRenderer(renderer)
             Log.d("VisionSDK", "Track attached")
         } catch (e: Exception) {

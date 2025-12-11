@@ -72,7 +72,7 @@ sealed class GeoVisionEvent {
     data class ParticipantLeft(val participant: RemoteParticipant) : GeoVisionEvent()
 
     data class LocalTrackSubscribed(
-         val publication: LocalTrackPublication, val participant: LocalParticipant
+        val publication: LocalTrackPublication, val participant: LocalParticipant
     ) : GeoVisionEvent()
 
 
@@ -221,7 +221,7 @@ object VisionBotSDKManager {
                         }
                     }
 
-                    is RoomEvent.LocalTrackSubscribed ->{
+                    is RoomEvent.LocalTrackSubscribed -> {
                         _events.tryEmit(
                             GeoVisionEvent.LocalTrackSubscribed(
                                 event.publication, event.participant
@@ -373,6 +373,33 @@ object VisionBotSDKManager {
                     url = socketUrl,
                     token = accessToken,
                 )
+
+                roomInstance.registerTextStreamHandler(
+                    topic = "lk_va_send_text",
+                    handler = { reader, info ->
+                        // You generally need to launch a coroutine here because stream reading is suspending
+                        sdkScope.launch {
+//                            Log.i("Datastream", "Stream connection info: $info")
+//
+//                            // Option 1: Process chunks as they arrive (real-time)
+//                            reader.flow.collect { chunk ->
+//                                Log.i("Datastream", "Received chunk: $chunk")
+//                            }
+
+                            // OR Option 2: Wait for the full message (if preferred over chunks)
+                             val allText = reader.readAll()
+                            _events.tryEmit(
+                                GeoVisionEvent.CustomMessageReceived(
+                                    senderId = info.toString(),
+                                    message = allText.joinToString (""),
+                                    topic = reader.info.topic,
+                                )
+                            )
+
+//                             Log.i("DataStream", "Full text received: ${allText.joinToString("")}")
+                        }
+                    }
+                )
             } catch (e: RoomException.ConnectException) { // More specific exception for connection issues
 //                Log.e(TAG, "Connection setup failed (ConnectException): ${e.message}", e)
                 _events.tryEmit(GeoVisionEvent.Error("Connection setup failed: ${e.message}", e))
@@ -412,10 +439,11 @@ object VisionBotSDKManager {
 //            setMicrophoneEnabled(false) // Ensure microphone is off before disconnecting
 
 
-
             // Clear the tracking map so renderers can be re-initialized on next connect
             initializedRenderers.clear()
+            roomToDisconnect.unregisterTextStreamHandler(topic = "lk_va_send_text")
             roomToDisconnect.disconnect()
+
             // The Disconnected event from roomInstance.events.collect will handle cleanup
         }
     }
@@ -612,8 +640,6 @@ object VisionBotSDKManager {
     }
 
 
-
-
     // This Map and Function have been added to track initialized renderers, because Livekit doesn't provide a way to check if a renderer is already initialized.
     // We use a WeakHashMap to avoid memory leaks by allowing renderers to be garbage collected when no longer in use.
     // This ensures that we don't attempt to re-initialize a renderer that has already been set up, preventing potential exceptions and redundant operations.
@@ -625,7 +651,7 @@ object VisionBotSDKManager {
         WeakHashMap<RendererCommon.RendererEvents, Boolean>()
     )
 
-    fun initializeVideoRenderer( renderer: RendererCommon.RendererEvents){
+    fun initializeVideoRenderer(renderer: RendererCommon.RendererEvents) {
         val room = currentRoom ?: return
 
         // 1. The Optimization Check
@@ -642,9 +668,11 @@ object VisionBotSDKManager {
                 is SurfaceViewRenderer -> {
                     room.initVideoRenderer(renderer) // Calls initVideoRenderer(SurfaceViewRenderer)
                 }
+
                 is TextureViewRenderer -> {
                     room.initVideoRenderer(renderer) // Calls initVideoRenderer(TextureViewRenderer)
                 }
+
                 else -> {
                     Log.w(TAG, "Unsupported renderer type: ${renderer::class.java.simpleName}")
                     return
@@ -664,8 +692,6 @@ object VisionBotSDKManager {
             }
         }
     }
-
-
 
 
     fun shutdown() {
