@@ -441,9 +441,20 @@ object VisionBotSDKManager {
 
 
             // Clear the tracking map so renderers can be re-initialized on next connect
-            initializedRenderers.clear()
-            roomToDisconnect.unregisterTextStreamHandler(topic = sendTextTopic)
-            roomToDisconnect.disconnect()
+            try {
+                initializedRenderers.clear()
+                roomToDisconnect.unregisterTextStreamHandler(topic = sendTextTopic)
+                roomToDisconnect.disconnect()
+            } catch (e: Exception) {
+                // Log or emit error event if needed
+                // StreamException$TerminatedException during disconnect is often expected
+                _events.tryEmit(
+                    GeoVisionEvent.Error(
+                        "Disconnect completed with exception: ${e.message}",
+                        e
+                    )
+                )
+            }
 
             // The Disconnected event from roomInstance.events.collect will handle cleanup
         }

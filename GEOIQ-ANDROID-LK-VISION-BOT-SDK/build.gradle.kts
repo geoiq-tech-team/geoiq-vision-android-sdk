@@ -43,8 +43,8 @@ dependencies {
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.1.5")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
-    api ("io.livekit:livekit-android:2.18.3")
-    api ("io.livekit:livekit-android-compose-components:1.4.0")
+    api ("io.livekit:livekit-android:2.23.5")
+    api ("io.livekit:livekit-android-compose-components:2.2.0")
 }
 
 afterEvaluate {

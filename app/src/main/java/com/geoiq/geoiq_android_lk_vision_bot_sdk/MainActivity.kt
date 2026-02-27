@@ -156,7 +156,7 @@ fun SDKInteractionScreen(modifier: Modifier = Modifier) {
 // 3. Build 'va_data' object (New structure with aiContext)
             val vaDataJson = JSONObject()
 
-          // Construct nested aiContext
+            // Construct nested aiContext
             val filtersJson = JSONObject()
             filtersJson.put("powerType", "single_vision")
 
@@ -170,7 +170,7 @@ fun SDKInteractionScreen(modifier: Modifier = Modifier) {
 
             newMetadataJson.put("va_data", vaDataJson)
 
-           // 4. Add new top-level fields
+            // 4. Add new top-level fields
             newMetadataJson.put("pid", 131)
             newMetadataJson.put("job_id", "vision_AJ_zxR4vDaUn6MZ")
             newMetadataJson.put("room_name", "BNDW5@BLD$")
@@ -346,7 +346,7 @@ fun SDKInteractionScreen(modifier: Modifier = Modifier) {
 
         } catch (e: Exception) {
             Log.e("VisionSDK", "Error initializing renderer: ${e.localizedMessage}")
-            return 
+            return
         }
     }
 
@@ -460,7 +460,7 @@ fun SDKInteractionScreen(modifier: Modifier = Modifier) {
                 }
 
 
-                is GeoVisionEvent.LocalTrackSubscribed ->{
+                is GeoVisionEvent.LocalTrackSubscribed -> {
                     addLog("Local track subscribed: ${event.publication.source.name} by ${event.participant.identity}")
                     if (event.publication.source?.name?.lowercase() == "camera") {
                         val localParticipant =
