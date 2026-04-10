@@ -28,6 +28,7 @@ import io.livekit.android.room.track.Track
 import io.livekit.android.room.track.TrackPublication
 import io.livekit.android.room.track.VideoTrack
 import io.livekit.android.rpc.RpcError
+import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -123,7 +124,12 @@ object VisionBotSDKManager {
     private const val TAG = "GeoI_VB_SDK"
     var currentRoom: Room? = null
     private var roomEventsJob: Job? = null
-    private val sdkScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
+    private val exceptionHandler = CoroutineExceptionHandler { _, throwable ->
+        // Last-resort safety net: catches any exception that escapes a sdkScope.launch block
+        // without a local try-catch, preventing a fatal crash and surfacing it as an error event.
+        _events.tryEmit(GeoVisionEvent.Error("Unexpected SDK error: ${throwable.message}", throwable))
+    }
+    private val sdkScope = CoroutineScope(Dispatchers.Main + SupervisorJob() + exceptionHandler)
     private val _events = MutableSharedFlow<GeoVisionEvent>(replay = 1, extraBufferCapacity = 5)
     val events: SharedFlow<GeoVisionEvent> = _events.asSharedFlow()
     private val sendTextTopic = "lk_va_publish"
@@ -164,6 +170,35 @@ object VisionBotSDKManager {
 //                            TAG,
 //                            "Successfully connected to room: ${roomInstance.name}. Did reconnect: $event"
 //                        )
+                        // Register the text stream handler here, after the publisher is fully ready.
+                        // Doing this inside RoomEvent.Connected guarantees the WebRTC PeerConnection
+                        // publisher is established, avoiding RoomException$ConnectException crashes.
+                        // It also re-registers automatically on every reconnect.
+                        roomInstance.registerTextStreamHandler(
+                            topic = sendTextTopic,
+                            handler = { reader, info ->
+                                sdkScope.launch {
+                                    try {
+                                        val allText = reader.readAll()
+                                        _events.tryEmit(
+                                            GeoVisionEvent.CustomMessageReceived(
+                                                senderId = info.toString(),
+                                                message = allText.joinToString(""),
+                                                topic = reader.info.topic,
+                                            )
+                                        )
+                                    } catch (e: Exception) {
+                                        // reader.readAll() can throw StreamException$TerminatedException
+                                        // if the stream is cut mid-read (e.g., remote disconnects)
+                                        _events.tryEmit(
+                                            GeoVisionEvent.Error(
+                                                "Failed to read incoming text stream: ${e.message}", e
+                                            )
+                                        )
+                                    }
+                                }
+                            }
+                        )
                         _events.tryEmit(
                             GeoVisionEvent.Connected(
                                 roomInstance.name ?: "Unknown Room", roomInstance.localParticipant
@@ -374,33 +409,6 @@ object VisionBotSDKManager {
                     url = socketUrl,
                     token = accessToken,
                 )
-
-                roomInstance.registerTextStreamHandler(
-                    topic = sendTextTopic,
-                    handler = { reader, info ->
-                        // You generally need to launch a coroutine here because stream reading is suspending
-                        sdkScope.launch {
-//                            Log.i("Datastream", "Stream connection info: $info")
-//
-//                            // Option 1: Process chunks as they arrive (real-time)
-//                            reader.flow.collect { chunk ->
-//                                Log.i("Datastream", "Received chunk: $chunk")
-//                            }
-
-                            // OR Option 2: Wait for the full message (if preferred over chunks)
-                             val allText = reader.readAll()
-                            _events.tryEmit(
-                                GeoVisionEvent.CustomMessageReceived(
-                                    senderId = info.toString(),
-                                    message = allText.joinToString (""),
-                                    topic = reader.info.topic,
-                                )
-                            )
-
-//                             Log.i("DataStream", "Received message on topic: ${reader.info.topic} Full text received: ${allText.joinToString("")}")
-                        }
-                    }
-                )
             } catch (e: RoomException.ConnectException) { // More specific exception for connection issues
 //                Log.e(TAG, "Connection setup failed (ConnectException): ${e.message}", e)
                 _events.tryEmit(GeoVisionEvent.Error("Connection setup failed: ${e.message}", e))
@@ -444,7 +452,9 @@ object VisionBotSDKManager {
             try {
                 initializedRenderers.clear()
                 roomToDisconnect.unregisterTextStreamHandler(topic = sendTextTopic)
-                roomToDisconnect.disconnect()
+                withContext(Dispatchers.IO) {
+                    roomToDisconnect.disconnect()
+                }
             } catch (e: Exception) {
                 // Log or emit error event if needed
                 // StreamException$TerminatedException during disconnect is often expected
@@ -709,23 +719,26 @@ object VisionBotSDKManager {
     fun shutdown() {
 //        Log.i(TAG, "Shutting down VisionBotSDKManager.")
 
-        // Use runBlocking to ensure disconnectFromGeoVisionRoom completes before cancellation
-        kotlinx.coroutines.runBlocking {
-            val roomToDisconnect = currentRoom
-            if (roomToDisconnect != null) {
-//                Log.i(TAG, "Disconnecting from room: ${roomToDisconnect.name}")
-                setCameraEnabled(false) // Ensure camera is off before disconnecting
-                setMicrophoneEnabled(false) // Ensure microphone is off before disconnecting
-
-                roomToDisconnect.disconnect()
-                cleanupRoomResources() // Ensure cleanup is called after disconnect
-            } else {
-//                Log.w(TAG, "Not connected to any room.")
-                _events.tryEmit(GeoVisionEvent.Error("Not connected to any room.", null))
+        // Use a dedicated IO scope for cleanup so the calling thread (main) is never blocked.
+        // sdkScope is cancelled only after cleanup completes via invokeOnCompletion.
+        val cleanupScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+        cleanupScope.launch {
+            try {
+                val roomToDisconnect = currentRoom
+                if (roomToDisconnect != null) {
+//                    Log.i(TAG, "Disconnecting from room: ${roomToDisconnect.name}")
+                    setCameraEnabled(false) // Ensure camera is off before disconnecting
+                    setMicrophoneEnabled(false) // Ensure microphone is off before disconnecting
+                    roomToDisconnect.disconnect()
+                    cleanupRoomResources() // Ensure cleanup is called after disconnect
+                }
+            } catch (e: Exception) {
+                // Best-effort cleanup — ignore errors during shutdown
             }
+        }.invokeOnCompletion {
+            sdkScope.cancel() // Cancel all coroutines started by this SDK
+            cleanupScope.cancel()
         }
-
-        sdkScope.cancel() // Cancel all coroutines started by this SDK
     }
 
 }
