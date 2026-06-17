@@ -23,6 +23,10 @@ import io.livekit.android.room.track.Track
 import io.livekit.android.room.track.VideoTrack
 import io.livekit.android.rpc.RpcError
 
+/**
+ * @author Sayak Mondal.
+ */
+
 // ── Track types ───────────────────────────────────────────────────────────────
 typealias Track = Track
 typealias VideoTrack = VideoTrack
