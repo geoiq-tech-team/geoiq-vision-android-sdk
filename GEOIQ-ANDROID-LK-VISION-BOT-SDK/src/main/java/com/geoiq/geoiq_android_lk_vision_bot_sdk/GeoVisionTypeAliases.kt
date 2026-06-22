@@ -9,6 +9,7 @@ package com.geoiq.geoiq_android_lk_vision_bot_sdk
 //       binary compatibility with v1.0.8 of the published SDK; do not rename.
 
 import io.livekit.android.RoomOptions
+import io.livekit.android.room.Room
 import io.livekit.android.room.participant.AudioTrackPublishDefaults
 import io.livekit.android.room.participant.ConnectionQuality
 import io.livekit.android.room.participant.LocalParticipant
@@ -49,6 +50,10 @@ typealias LocalAudioTrackOptions = LocalAudioTrackOptions
 typealias LocalVideoTrackOptions = LocalVideoTrackOptions
 typealias audioTrackPublishDefaults = AudioTrackPublishDefaults
 typealias videoTrackPublishDefaults = VideoTrackPublishDefaults
+
+// ── Room ──────────────────────────────────────────────────────────────────────
+typealias GeoVisionRoom = Room
+typealias GeoVisionRoomState = Room.State
 
 // ── Room options ──────────────────────────────────────────────────────────────
 typealias GeoVisionRoomOptions = RoomOptions

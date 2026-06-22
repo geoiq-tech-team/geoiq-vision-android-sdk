@@ -23,7 +23,6 @@ import java.net.URL
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
-import io.livekit.android.room.Room
 import javax.net.ssl.HttpsURLConnection
 
 /**
@@ -249,7 +248,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     private fun syncConnectionStateOnInit() {
         val room = VisionBotSDKManager.currentRoom ?: return
-        if (room.state == Room.State.CONNECTED) {
+        if (room.state == GeoVisionRoomState.CONNECTED) {
             isConnected = true
             connectionStatus = "Connected: ${room.name ?: "Unknown Room"}"
             syncMediaState()
