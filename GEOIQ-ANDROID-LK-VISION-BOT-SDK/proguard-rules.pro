@@ -1,35 +1,49 @@
-# Add project specific ProGuard rules here.
-# You can control the set of applied configuration files using the
-# proguardFiles setting in build.gradle.
-#
-# For more details, see
-#   http://developer.android.com/guide/developing/tools/proguard.html
+# SDK module ProGuard rules.
+# NOTE: isMinifyEnabled = false in build.gradle.kts, so this file does NOT run today.
+# It is kept accurate so enabling minification in the future is safe.
+# Rules that affect SDK consumers live in consumer-rules.pro.
 
-# If your project uses WebView with JS, uncomment the following
-# and specify the fully qualified class name to the JavaScript interface
-# class:
-#-keepclassmembers class fqcn.of.javascript.interface.for.webview {
-#   public *;
-#}
+# ── SDK public API ────────────────────────────────────────────────────────────
+-keep public class com.geoiq.geoiq_android_lk_vision_bot_sdk.VisionBotSDKManager { public *; }
+-keep public class com.geoiq.geoiq_android_lk_vision_bot_sdk.VisionBotSDKManager$Companion { public *; }
+-keep public class com.geoiq.geoiq_android_lk_vision_bot_sdk.GeoVisionEvent { *; }
+-keep public class com.geoiq.geoiq_android_lk_vision_bot_sdk.GeoVisionEvent$* { *; }
 
-# Uncomment this to preserve the line number information for
-# debugging stack traces.
-#-keepattributes SourceFile,LineNumberTable
+# ── WebRTC JNI ────────────────────────────────────────────────────────────────
+# Native code calls back into these; stripping breaks audio/video at runtime.
+-keepclasseswithmembernames class org.webrtc.** { native <methods>; }
+-keepclassmembers class org.webrtc.** {
+    @org.webrtc.CalledByNative *;
+    @org.webrtc.CalledByNativeUnchecked *;
+}
+-keep class org.webrtc.PeerConnectionFactory { *; }
+-keep class org.webrtc.EglBase { *; }
+-keep class org.webrtc.SurfaceViewRenderer { *; }
 
-# If you keep the line number information, uncomment this to
-# hide the original source file name.
-#-renamesourcefileattribute SourceFile
+# ── LiveKit — only the types exposed via public type aliases ──────────────────
+-keep class io.livekit.android.LiveKit { *; }
+-keep class io.livekit.android.RoomOptions { *; }
+-keep class io.livekit.android.room.Room { *; }
+-keep class io.livekit.android.room.Room$State { *; }
+-keep class io.livekit.android.room.participant.LocalParticipant { *; }
+-keep class io.livekit.android.room.participant.RemoteParticipant { *; }
+-keep class io.livekit.android.room.participant.ConnectionQuality { *; }
+-keep class io.livekit.android.room.participant.AudioTrackPublishDefaults { *; }
+-keep class io.livekit.android.room.participant.VideoTrackPublishDefaults { *; }
+-keep class io.livekit.android.room.track.Track { *; }
+-keep class io.livekit.android.room.track.VideoTrack { *; }
+-keep class io.livekit.android.room.track.LocalVideoTrack { *; }
+-keep class io.livekit.android.room.track.LocalVideoTrackOptions { *; }
+-keep class io.livekit.android.room.track.LocalAudioTrackOptions { *; }
+-keep class io.livekit.android.room.track.CameraPosition { *; }
+-keep class io.livekit.android.room.track.DataPublishReliability { *; }
+-keep class io.livekit.android.rpc.RpcError { *; }
 
-# Keep public classes in your SDK's main package
--keep class com.geoiq.geoiq_android_lk_vision_bot_sdk.GeoVisionEvent.** { *; }
--keep class com.geoiq.geoiq_android_lk_vision_bot_sdk.VisionBotSDKManager.** { *; }
-
-# Required to prevent LiveKit / WebRTC from being stripped (if you're exposing them)
--keep class org.webrtc.** { *; }
--keep class io.livekit.** { *; }
-
-# Optional: keep Kotlin metadata (helps with reflection)
+# ── Kotlin ────────────────────────────────────────────────────────────────────
 -keep class kotlin.Metadata { *; }
+-keepattributes *Annotation*
+-keepattributes Signature
+-keepattributes Exceptions
 
-# Keep annotations
--keep @interface **.**
+# ── Suppress known-safe warnings ─────────────────────────────────────────────
+-dontwarn com.sun.nio.sctp.**
