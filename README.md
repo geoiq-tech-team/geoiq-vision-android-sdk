@@ -216,11 +216,35 @@ The `app/` module is a self-contained Jetpack Compose app demonstrating the full
    cd geoiq-vision-android-sdk
    ```
 
-2. Open in Android Studio.
+2. Create `local.properties` in the project root pointing at **your own** Android SDK:
 
-3. Update `xApiKey`, `geoVisionUrl`, and `buildTokenMetadata()` in `app/.../MainViewModel.kt` with your server credentials.
+   ```properties
+   sdk.dir=/Users/<you>/Library/Android/sdk
+   ```
 
-4. Run on a physical device or emulator (camera/microphone require a real device for best results).
+   This file is git-ignored and intentionally not tracked — it holds a machine-specific
+   path, so each developer maintains their own. Opening the project in Android Studio
+   generates it automatically.
+
+3. Ensure Gradle runs on **JDK 17 or newer** (the Android Gradle Plugin requires it).
+   Android Studio's bundled JDK works out of the box. For command-line builds, set it
+   in your *user-level* `~/.gradle/gradle.properties` so no machine path is committed:
+
+   ```properties
+   org.gradle.java.home=/Applications/Android Studio.app/Contents/jbr/Contents/Home
+   ```
+
+4. Open in Android Studio.
+
+5. Update `xApiKey`, `geoVisionUrl`, and `buildTokenMetadata()` in `app/.../MainViewModel.kt` with your server credentials.
+
+6. Run on a physical device or emulator (camera/microphone require a real device for best results).
+
+> **Upgrading from an older clone?** `local.properties`, `.gradle/`, and `build/` used to be
+> tracked in git and were removed. Pulling this change deletes your local copies. Gradle
+> regenerates `.gradle/` and `build/` on the next build, but you must recreate
+> `local.properties` yourself using step 2 above — otherwise the build fails with
+> *"SDK location not found."*
 
 ---
 

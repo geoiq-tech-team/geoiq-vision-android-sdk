@@ -1,6 +1,6 @@
 plugins {
-    id("com.android.library")
-    id("org.jetbrains.kotlin.android")
+    alias(libs.plugins.android.library)
+    alias(libs.plugins.kotlin.android)
     `maven-publish`
 }
 
@@ -9,10 +9,10 @@ version = "1.0.8"
 
 android {
     namespace = "com.geoiq.geoiq_android_lk_vision_bot_sdk"
-    compileSdk = 34
+    compileSdk = libs.versions.compileSdk.get().toInt()
 
     defaultConfig {
-        minSdk = 23
+        minSdk = libs.versions.minSdk.get().toInt()
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles("consumer-rules.pro")
@@ -37,14 +37,18 @@ android {
 }
 
 dependencies {
-    implementation("androidx.core:core-ktx:1.12.0")
-    implementation("androidx.appcompat:appcompat:1.6.1")
-    implementation("com.google.android.material:material:1.11.0")
-    testImplementation("junit:junit:4.13.2")
-    androidTestImplementation("androidx.test.ext:junit:1.1.5")
-    androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
-    api ("io.livekit:livekit-android:2.23.5")
-    api ("io.livekit:livekit-android-compose-components:2.2.0")
+    implementation(libs.androidx.core.ktx)
+    implementation(libs.androidx.appcompat)
+    implementation(libs.android.material)
+
+    // api() — LiveKit types appear in this SDK's public signatures (see GeoVisionEvent),
+    // so they must be on every consumer's compile classpath. Part of the public contract.
+    api(libs.livekit.android)
+    api(libs.livekit.android.compose.components)
+
+    testImplementation(libs.junit)
+    androidTestImplementation(libs.androidx.test.ext.junit)
+    androidTestImplementation(libs.androidx.test.espresso.core)
 }
 
 afterEvaluate {

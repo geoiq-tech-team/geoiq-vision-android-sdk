@@ -1,5 +1,6 @@
 package com.geoiq.geoiq_android_lk_vision_bot_sdk
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.net.Uri
 import android.util.Log
@@ -54,6 +55,9 @@ object VisionBotSDKManager {
     // ── State ──────────────────────────────────────────────────────────────────
 
     /** The active LiveKit room. Null when not connected. */
+    // Safe: LiveKit.create() is always passed context.applicationContext, so no
+    // Activity is retained. Lint can't see through the constructor to verify this.
+    @SuppressLint("StaticFieldLeak")
     var currentRoom: Room? = null
     private var roomEventsJob: Job? = null
 
