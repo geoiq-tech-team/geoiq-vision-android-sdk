@@ -41,8 +41,7 @@ dependencies {
     implementation(libs.androidx.appcompat)
     implementation(libs.android.material)
 
-    // api() — LiveKit types appear in this SDK's public signatures (see GeoVisionEvent),
-    // so they must be on every consumer's compile classpath. Part of the public contract.
+    // api(), not implementation(): LiveKit types appear in this SDK's public signatures.
     api(libs.livekit.android)
     api(libs.livekit.android.compose.components)
 

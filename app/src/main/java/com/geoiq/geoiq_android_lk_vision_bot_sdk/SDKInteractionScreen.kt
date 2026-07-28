@@ -69,13 +69,9 @@ import androidx.compose.material3.ButtonDefaults
 fun SDKInteractionScreen(viewModel: MainViewModel = viewModel()) {
     val rendererRef = remember { mutableStateOf<SurfaceViewRenderer?>(null) }
 
-    // Side effect: attach the local video track whenever either the track or the renderer
-    // changes (dual-key — a new renderer must re-attach even if the track is unchanged).
-    //
-    // DisposableEffect, not LaunchedEffect: now that this screen sits inside a NavDisplay it
-    // can be disposed while the LiveKit session stays connected. The renderer must be removed
-    // as a frame sink before it is released, or LiveKit keeps pushing frames into a released
-    // EGL surface. onDispose also runs when the keys change, so re-attach is still correct.
+    // Dual-key: a replaced renderer must re-attach even when the track is unchanged.
+    // onDispose must remove the renderer before AndroidView releases it, or LiveKit keeps
+    // pushing frames into a released EGL surface once this screen leaves the NavDisplay.
     val localVideoTrack = viewModel.localVideoTrack
     DisposableEffect(localVideoTrack, rendererRef.value) {
         val renderer = rendererRef.value

@@ -1,30 +1,23 @@
 [versions]
 # Build tooling
-# Kotlin 2.x uses the Compose Compiler Gradle plugin (org.jetbrains.kotlin.plugin.compose),
-# which is versioned in lockstep with Kotlin — there is no separate composeCompiler version
-# and `composeOptions.kotlinCompilerExtensionVersion` no longer applies.
 agp = "8.11.1"
 kotlin = "2.2.21"
 
-# Android SDK levels — both modules must agree.
-# compileSdk 36 is required by androidx.navigation3.
+# Android SDK levels — both modules must agree
 compileSdk = "36"
 minSdk = "23"
 targetSdk = "36"
 
 # AndroidX / Google
-# Ceilings are set by AGP 8.11.1 + compileSdk 36 (checked via each artifact's
-# aar-metadata.properties): core-ktx 1.19.0 and activity-compose 1.13.0 both
-# require AGP 9.1, so they are deliberately NOT used.
-coreKtx = "1.18.0"          # minCompileSdk 36, minAgp 8.9.1
+# Do not bump past these without also bumping AGP: core-ktx 1.19.0 and
+# activity-compose 1.13.0 require AGP 9.1, which also forces compileSdk 37.
+coreKtx = "1.18.0"
 appcompat = "1.7.1"
 material = "1.13.0"
-lifecycle = "2.10.0"        # matches navigation3 1.1.4's lifecycle-runtime floor
-activityCompose = "1.12.4"  # minCompileSdk 36, minAgp 8.9.1
-composeBom = "2026.01.00"   # -> Compose 1.10.1, satisfies navigation3's 1.10.0 floor
+lifecycle = "2.10.0"
+activityCompose = "1.12.4"
+composeBom = "2026.01.00"
 
-# Navigation 3 — back stack is owned by the caller; NavDisplay replaces NavHost.
-# Requires compileSdk 36+ and the Kotlin serialization plugin (NavKey is @Serializable).
 navigation3 = "1.1.4"
 kotlinxSerialization = "1.11.0"
 
@@ -50,7 +43,6 @@ androidx-lifecycle-runtime-ktx = { group = "androidx.lifecycle", name = "lifecyc
 androidx-lifecycle-viewmodel-compose = { group = "androidx.lifecycle", name = "lifecycle-viewmodel-compose", version.ref = "lifecycle" }
 androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "activityCompose" }
 
-# Compose — versions come from the BOM, so these declare no version of their own
 androidx-compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "composeBom" }
 androidx-compose-ui = { group = "androidx.compose.ui", name = "ui" }
 androidx-compose-ui-graphics = { group = "androidx.compose.ui", name = "ui-graphics" }
@@ -61,9 +53,6 @@ androidx-compose-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-
 androidx-compose-material3 = { group = "androidx.compose.material3", name = "material3" }
 androidx-compose-material-icons-extended = { group = "androidx.compose.material", name = "material-icons-extended" }
 
-# Navigation 3 — lifecycle-viewmodel-navigation3 provides NavEntry-scoped ViewModels.
-# It is NOT used here: MainViewModel stays activity-scoped so a live LiveKit session
-# survives navigation (see MainActivity / VisionBotSDKManager being a process singleton).
 androidx-navigation3-runtime = { group = "androidx.navigation3", name = "navigation3-runtime", version.ref = "navigation3" }
 androidx-navigation3-ui = { group = "androidx.navigation3", name = "navigation3-ui", version.ref = "navigation3" }
 kotlinx-serialization-core = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-core", version.ref = "kotlinxSerialization" }
@@ -79,7 +68,5 @@ androidx-test-espresso-core = { group = "androidx.test.espresso", name = "espres
 android-application = { id = "com.android.application", version.ref = "agp" }
 android-library = { id = "com.android.library", version.ref = "agp" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
-# Required on Kotlin 2.x for any module with Compose code — replaces kotlinCompilerExtensionVersion.
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
-# Required by Navigation 3: NavKey implementations are @Serializable.
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }

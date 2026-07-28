@@ -7,3 +7,6 @@ sealed interface GeoVisionNavKey : NavKey
 
 @Serializable
 data object SdkInteraction : GeoVisionNavKey
+
+@Serializable
+data object Chat : GeoVisionNavKey

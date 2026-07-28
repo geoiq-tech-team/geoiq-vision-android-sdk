@@ -25,11 +25,23 @@ import java.util.Date
 import java.util.Locale
 import javax.net.ssl.HttpsURLConnection
 
+data class ChatMessage(
+    val text: String,
+    val isLocal: Boolean,
+    val sender: String?,
+    val timestamp: String,
+)
+
 /**
 * @author Sayak Mondal.
  */
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
+
+    private companion object {
+        const val CHAT_TOPIC = "chat"
+    }
+
 
     private val xApiKey = BuildConfig.API_KEY
     private val geoVisionUrl = BuildConfig.BASE_URL
@@ -66,6 +78,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     val eventLog = mutableStateListOf<String>()
 
+    val chatMessages = mutableStateListOf<ChatMessage>()
+
     init {
         syncConnectionStateOnInit()
         collectSdkEvents()
@@ -98,6 +112,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                         agentState = ""
                         localVideoTrack = null
                         rendererSession++
+                        chatMessages.clear()
                         syncMediaState()
                     }
                     is GeoVisionEvent.ParticipantJoined -> {
@@ -157,10 +172,14 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                         isSpeaking = VisionBotSDKManager.getIsSpeaking()
                     }
                     is GeoVisionEvent.TranscriptionReceived -> {
-                        if (event.isFinal) log("Transcript: ${event.message}")
+                        if (event.isFinal) {
+                            log("Transcript: ${event.message}")
+                            addChatMessage(event.message, isLocal = false, sender = "Agent")
+                        }
                     }
                     is GeoVisionEvent.CustomMessageReceived -> {
                         log("[${event.topic}] ${event.message}")
+                        addChatMessage(event.message, isLocal = false, sender = event.topic)
                     }
                     is GeoVisionEvent.Error -> {
                         log("ERROR: ${event.message}")
@@ -239,6 +258,41 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             log(if (success) "Sent: ${file.name}" else "Send failed: ${file.name}")
             file.delete()
         }
+    }
+
+    fun sendChatMessage(text: String) {
+        val message = text.trim()
+        if (message.isEmpty()) return
+
+        viewModelScope.launch {
+            val localParticipant = VisionBotSDKManager.getLocalParticipant() ?: run {
+                log("Cannot send chat: not connected")
+                return@launch
+            }
+            // Echoed locally — LiveKit does not deliver a participant's own publishData back.
+            addChatMessage(message, isLocal = true, sender = "You")
+            try {
+                localParticipant.publishData(
+                    message.toByteArray(Charsets.UTF_8),
+                    DataPublishReliability.RELIABLE,
+                    CHAT_TOPIC
+                )
+            } catch (e: Exception) {
+                log("Chat send failed: ${e.message}")
+            }
+        }
+    }
+
+    private fun addChatMessage(text: String?, isLocal: Boolean, sender: String?) {
+        if (text.isNullOrBlank()) return
+        chatMessages.add(
+            ChatMessage(
+                text = text,
+                isLocal = isLocal,
+                sender = sender,
+                timestamp = SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date()),
+            )
+        )
     }
 
     private fun syncMediaState() {
