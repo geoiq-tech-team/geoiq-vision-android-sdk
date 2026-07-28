@@ -21,6 +21,9 @@ private val BottomBarDestinations = listOf(
     BottomBarDestination(Chat, "Chat", Icons.AutoMirrored.Filled.Chat),
 )
 
+internal fun GeoVisionNavKey?.isTopLevel(): Boolean =
+    BottomBarDestinations.any { it.key == this }
+
 @Composable
 fun GeoVisionBottomBar(
     current: GeoVisionNavKey?,

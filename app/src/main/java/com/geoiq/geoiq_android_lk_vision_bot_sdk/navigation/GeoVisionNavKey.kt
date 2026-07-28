@@ -10,3 +10,6 @@ data object SdkInteraction : GeoVisionNavKey
 
 @Serializable
 data object Chat : GeoVisionNavKey
+
+@Serializable
+data object Settings : GeoVisionNavKey

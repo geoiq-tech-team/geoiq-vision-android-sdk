@@ -40,11 +40,40 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     private companion object {
         const val CHAT_TOPIC = "chat"
+        const val PREFS_NAME = "geo_vision_config"
+        const val PREF_API_KEY = "api_key"
+        const val PREF_BASE_URL = "base_url"
     }
 
+    private val prefs =
+        application.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
-    private val xApiKey = BuildConfig.API_KEY
-    private val geoVisionUrl = BuildConfig.BASE_URL
+    // Committed config: persisted overrides of the BuildConfig values. SettingsScreen edits
+    // a draft copy and commits via saveConfig(); connect()/fetchToken() only ever read these,
+    // so an unsaved draft never affects a connection.
+    var xApiKey by mutableStateOf(prefs.getString(PREF_API_KEY, null) ?: BuildConfig.API_KEY)
+        private set
+    var geoVisionUrl by mutableStateOf(prefs.getString(PREF_BASE_URL, null) ?: BuildConfig.BASE_URL)
+        private set
+
+    fun saveConfig(url: String, apiKey: String) {
+        geoVisionUrl = url
+        xApiKey = apiKey
+        prefs.edit()
+            .putString(PREF_BASE_URL, url)
+            .putString(PREF_API_KEY, apiKey)
+            .apply()
+        log("Config saved")
+    }
+
+    fun resetConfigToDefaults() {
+        xApiKey = BuildConfig.API_KEY
+        geoVisionUrl = BuildConfig.BASE_URL
+        prefs.edit().remove(PREF_API_KEY).remove(PREF_BASE_URL).apply()
+    }
+
+    val isConfigModified: Boolean
+        get() = xApiKey != BuildConfig.API_KEY || geoVisionUrl != BuildConfig.BASE_URL
 
     // Connection state
     var connectionStatus by mutableStateOf("Disconnected")
@@ -208,6 +237,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             }
         }
     }
+
 
     fun disconnect() {
         VisionBotSDKManager.disconnectFromGeoVisionRoom()

@@ -12,19 +12,25 @@ import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.ui.NavDisplay
 import com.geoiq.geoiq_android_lk_vision_bot_sdk.ChatScreen
 import com.geoiq.geoiq_android_lk_vision_bot_sdk.SDKInteractionScreen
+import com.geoiq.geoiq_android_lk_vision_bot_sdk.setting.SettingsScreen
 
 @Composable
 fun GeoVisionNavHost(modifier: Modifier = Modifier) {
     val backStack = rememberNavBackStack(SdkInteraction)
     val current = backStack.lastOrNull() as? GeoVisionNavKey
 
+    val openSettings = { if (backStack.lastOrNull() != Settings) backStack.add(Settings) }
+    val goBack = { backStack.removeLastOrNull(); Unit }
+
     Scaffold(
         modifier = modifier,
         bottomBar = {
-            GeoVisionBottomBar(
-                current = current,
-                onSelect = { backStack.switchTopLevelTo(it) },
-            )
+            if (current.isTopLevel()) {
+                GeoVisionBottomBar(
+                    current = current,
+                    onSelect = { backStack.switchTopLevelTo(it) },
+                )
+            }
         },
         // Destinations own their own Scaffold; without this the status bar inset is applied twice.
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
@@ -34,8 +40,9 @@ fun GeoVisionNavHost(modifier: Modifier = Modifier) {
             modifier = Modifier.padding(bottom = innerPadding.calculateBottomPadding()),
             onBack = { backStack.removeLastOrNull() },
             entryProvider = entryProvider {
-                entry<SdkInteraction> { SDKInteractionScreen() }
-                entry<Chat> { ChatScreen() }
+                entry<SdkInteraction> { SDKInteractionScreen(onOpenSettings = openSettings) }
+                entry<Chat> { ChatScreen(onOpenSettings = openSettings) }
+                entry<Settings> { SettingsScreen(onBack = goBack) }
             }
         )
     }
