@@ -31,8 +31,8 @@ import javax.net.ssl.HttpsURLConnection
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
 
-    private val xApiKey = "eyshaG9sbGVzX2Fwa1DopV9rCV12FwaV9rZXk6cassmmjas"
-    private val geoVisionUrl = "wss://lk-stg4.diq.geoiq.ai"
+    private val xApiKey = BuildConfig.API_KEY
+    private val geoVisionUrl = BuildConfig.BASE_URL
 
     // Connection state
     var connectionStatus by mutableStateOf("Disconnected")

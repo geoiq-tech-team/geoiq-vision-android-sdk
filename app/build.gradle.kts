@@ -32,6 +32,31 @@ android {
                 "proguard-rules.pro"
             )
             signingConfig = signingConfigs.getByName("debug")
+            buildConfigField(
+                "String",
+                "BASE_URL",
+                "\"wss://lk-stg2.diq.geoiq.ai/\""
+            )
+
+            buildConfigField(
+                "String",
+                "API_KEY",
+                "\"eyshaG9sbGVzX2Fwa1DopV9rCV12FwaV9rZXk6cassmmjas\""
+            )
+        }
+
+        debug {
+            buildConfigField(
+                "String",
+                "BASE_URL",
+                "\"wss://lk-stg2.diq.geoiq.ai/\""
+            )
+
+            buildConfigField(
+                "String",
+                "API_KEY",
+                "\"eyshaG9sbGVzX2Fwa1DopV9rCV12FwaV9rZXk6cassmmjas\""
+            )
         }
     }
     compileOptions {
@@ -51,6 +76,9 @@ android {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
+    }
+    buildFeatures {
+        buildConfig = true
     }
 }
 
