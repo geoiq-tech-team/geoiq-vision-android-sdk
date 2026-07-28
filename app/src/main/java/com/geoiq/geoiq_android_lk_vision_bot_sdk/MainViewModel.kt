@@ -24,6 +24,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import javax.net.ssl.HttpsURLConnection
+import androidx.core.content.edit
 
 data class ChatMessage(
     val text: String,
@@ -49,9 +50,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val prefs =
         application.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
-    // Committed config: persisted overrides of the BuildConfig values. SettingsScreen edits
-    // a draft copy and commits via saveConfig(); connect()/fetchToken() only ever read these,
-    // so an unsaved draft never affects a connection.
     var xApiKey by mutableStateOf(prefs.getString(PREF_API_KEY, null) ?: BuildConfig.API_KEY)
         private set
     var geoVisionUrl by mutableStateOf(prefs.getString(PREF_BASE_URL, null) ?: BuildConfig.BASE_URL)
@@ -63,11 +61,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         geoVisionUrl = url
         xApiKey = apiKey
         tokenUrl = tokenEndpoint
-        prefs.edit()
-            .putString(PREF_BASE_URL, url)
-            .putString(PREF_API_KEY, apiKey)
-            .putString(PREF_TOKEN_URL, tokenEndpoint)
-            .apply()
+        prefs.edit {
+            putString(PREF_BASE_URL, url)
+                .putString(PREF_API_KEY, apiKey)
+                .putString(PREF_TOKEN_URL, tokenEndpoint)
+        }
         log("Config saved")
     }
 
@@ -75,11 +73,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         xApiKey = BuildConfig.API_KEY
         geoVisionUrl = BuildConfig.BASE_URL
         tokenUrl = BuildConfig.TOKEN_URL
-        prefs.edit()
-            .remove(PREF_API_KEY)
-            .remove(PREF_BASE_URL)
-            .remove(PREF_TOKEN_URL)
-            .apply()
+        prefs.edit {
+            remove(PREF_API_KEY)
+                .remove(PREF_BASE_URL)
+                .remove(PREF_TOKEN_URL)
+        }
     }
 
     val isConfigModified: Boolean
@@ -311,7 +309,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 log("Cannot send chat: not connected")
                 return@launch
             }
-            // Echoed locally — LiveKit does not deliver a participant's own publishData back.
             addChatMessage(message, isLocal = true, sender = "You")
             try {
                 localParticipant.publishData(
@@ -361,9 +358,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     private suspend fun fetchToken(): Triple<String, String, String>? = withContext(Dispatchers.IO) {
         var conn: HttpsURLConnection? = null
-        // URL() and openConnection() are inside the try because tokenUrl is user-editable:
-        // a malformed value throws MalformedURLException and a non-https one fails the
-        // HttpsURLConnection cast. Uncaught, either would crash viewModelScope.
         try {
             val metadata = buildTokenMetadata()
             conn = (URL(tokenUrl).openConnection() as HttpsURLConnection).apply {

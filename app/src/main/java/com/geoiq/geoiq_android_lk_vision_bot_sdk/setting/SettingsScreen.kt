@@ -88,7 +88,6 @@ fun SettingsScreen(
             var tokenUrlDraft by rememberSaveable { mutableStateOf(viewModel.tokenUrl) }
             var keyDraft by rememberSaveable { mutableStateOf(viewModel.xApiKey) }
 
-            // Resync when the committed values change from outside this screen (reset icon).
             LaunchedEffect(viewModel.geoVisionUrl, viewModel.tokenUrl, viewModel.xApiKey) {
                 urlDraft = viewModel.geoVisionUrl
                 tokenUrlDraft = viewModel.tokenUrl
@@ -98,7 +97,6 @@ fun SettingsScreen(
             val urlInvalid = urlDraft.isNotBlank() &&
                 !urlDraft.startsWith("ws://") &&
                 !urlDraft.startsWith("wss://")
-            // https only — fetchToken() casts to HttpsURLConnection.
             val tokenUrlInvalid = tokenUrlDraft.isNotBlank() && !tokenUrlDraft.startsWith("https://")
             val draftValid = !urlInvalid && !tokenUrlInvalid &&
                 urlDraft.isNotBlank() && tokenUrlDraft.isNotBlank() && keyDraft.isNotBlank()
