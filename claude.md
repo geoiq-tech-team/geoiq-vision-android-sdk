@@ -7,7 +7,13 @@ This repo is a LiveKit-based Android SDK + sample app for real-time audio/video 
 - **SDK module:** `GEOIQ-ANDROID-LK-VISION-BOT-SDK/`
 - **Sample app:** `app/`
 - **Distributed via:** JitPack (`com.github.geoiq-tech-team:geoiq-vision-android-sdk:TAG`)
-- **Active branch:** `Sayak/Refactoring-SDK`
+- **Active branch:** `siva/refactor`
+
+### Local build setup
+
+- `local.properties` is **not tracked** — each developer creates their own with `sdk.dir=/Users/<you>/Library/Android/sdk`. Android Studio generates it on first open.
+- Requires **JDK 17+** (AGP requirement). Set `org.gradle.java.home` in your *user-level* `~/.gradle/gradle.properties`, not in the repo, so no machine path is committed.
+- `.gradle/` and `build/` are untracked as of `eba0660`.
 
 ---
 
@@ -35,15 +41,38 @@ Refactoring complete and committed. All video rendering bugs fixed. README updat
 
 ## Key Decisions & Constraints
 
-### CRITICAL: No direct LiveKit imports in the app/client
-Consumers (including the sample app) must ONLY use type aliases from `com.geoiq.geoiq_android_lk_vision_bot_sdk`. No exceptions.
+### Prefer the type aliases where they exist (but they are NOT isolation)
 
-### Type alias naming quirks (do not rename — binary compat)
+Consumers should prefer aliases from `com.geoiq.geoiq_android_lk_vision_bot_sdk` over raw
+`io.livekit.*` imports — but be clear about what this does and doesn't buy:
+
+- **What actually lets consumers skip the LiveKit dependency:** `api("io.livekit:livekit-android")`
+  in the SDK's `build.gradle.kts`, not the aliases. `api` puts LiveKit on every consumer's
+  compile classpath transitively.
+- **Typealiases provide zero encapsulation.** They expand at compile time — `com.geoiq…Track`
+  *is* `io.livekit…Track`, same class, same bytecode. Nothing is wrapped or swappable.
+- **The alias set is incomplete, so "no direct imports" is not achievable today.** Missing:
+  `Participant`, `TrackPublication`, `LocalTrackPublication`, `RoomException`,
+  `SurfaceViewRenderer`, `TextureViewRenderer`, `RendererCommon`, `StreamBytesOptions`.
+  The sample app is forced to import two of these directly
+  (`SDKInteractionScreen.kt:56-57`) to use `initializeVideoRenderer()`.
+
+Real isolation would require wrapper types (a genuine facade), not aliases. That is a large
+change and probably not worth it unless the transport is ever swapped.
+
+### Type alias naming quirks (do not rename — SOURCE compat)
 - `GeoVisionRoomOptions` → maps to `RoomOptions` (avoids clash)
 - `GeoVisionRoom` → maps to `Room`
 - `GeoVisionRoomState` → maps to `Room.State`
 - `audioTrackPublishDefaults` → lowercase, maps to `AudioTrackPublishDefaults`
 - `videoTrackPublishDefaults` → lowercase, maps to `VideoTrackPublishDefaults`
+
+> Note: typealiases have **no bytecode representation** — they live only in Kotlin metadata.
+> Renaming breaks **source** compatibility for consumers who recompile; already-compiled
+> consumer bytecode is unaffected. The "binary compat" wording in the header comment of
+> `GeoVisionTypeAliases.kt` is inaccurate. The conclusion (don't rename) still stands, and
+> the lowercase names violate Kotlin type-naming conventions — candidates for a
+> `@Deprecated` alias pointing at properly-cased names at the next major version.
 
 ### Renderer registry
 `VisionBotSDKManager` uses a `WeakHashMap`-backed registry to track renderers — prevents leaks across sessions.
@@ -110,7 +139,7 @@ rendererSession++
 
 - Kotlin + Coroutines + `SharedFlow`
 - Jetpack Compose (Material3)
-- LiveKit Android SDK (wrapped via type aliases)
+- LiveKit Android SDK (exposed to consumers as well)
 - `AndroidViewModel` / `viewModelScope`
 - JitPack for distribution
 
