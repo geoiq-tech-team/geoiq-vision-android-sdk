@@ -45,6 +45,12 @@ android {
                 "API_KEY",
                 "\"eyshaG9sbGVzX2Fwa1DopV9rCV12FwaV9rZXk6cassmmjas\""
             )
+
+            buildConfigField(
+                "String",
+                "TOKEN_URL",
+                "\"https://lk-va-token.diq.geoiq.ai/stg/v1/token\""
+            )
         }
 
         debug {
@@ -58,6 +64,12 @@ android {
                 "String",
                 "API_KEY",
                 "\"eyshaG9sbGVzX2Fwa1DopV9rCV12FwaV9rZXk6cassmmjas\""
+            )
+
+            buildConfigField(
+                "String",
+                "TOKEN_URL",
+                "\"https://lk-va-token.diq.geoiq.ai/stg/v1/token\""
             )
         }
     }

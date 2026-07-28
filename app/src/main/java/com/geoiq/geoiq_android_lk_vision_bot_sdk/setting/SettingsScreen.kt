@@ -85,19 +85,26 @@ fun SettingsScreen(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             var urlDraft by rememberSaveable { mutableStateOf(viewModel.geoVisionUrl) }
+            var tokenUrlDraft by rememberSaveable { mutableStateOf(viewModel.tokenUrl) }
             var keyDraft by rememberSaveable { mutableStateOf(viewModel.xApiKey) }
 
             // Resync when the committed values change from outside this screen (reset icon).
-            LaunchedEffect(viewModel.geoVisionUrl, viewModel.xApiKey) {
+            LaunchedEffect(viewModel.geoVisionUrl, viewModel.tokenUrl, viewModel.xApiKey) {
                 urlDraft = viewModel.geoVisionUrl
+                tokenUrlDraft = viewModel.tokenUrl
                 keyDraft = viewModel.xApiKey
             }
 
             val urlInvalid = urlDraft.isNotBlank() &&
                 !urlDraft.startsWith("ws://") &&
                 !urlDraft.startsWith("wss://")
-            val draftValid = !urlInvalid && urlDraft.isNotBlank() && keyDraft.isNotBlank()
-            val isDirty = urlDraft != viewModel.geoVisionUrl || keyDraft != viewModel.xApiKey
+            // https only — fetchToken() casts to HttpsURLConnection.
+            val tokenUrlInvalid = tokenUrlDraft.isNotBlank() && !tokenUrlDraft.startsWith("https://")
+            val draftValid = !urlInvalid && !tokenUrlInvalid &&
+                urlDraft.isNotBlank() && tokenUrlDraft.isNotBlank() && keyDraft.isNotBlank()
+            val isDirty = urlDraft != viewModel.geoVisionUrl ||
+                tokenUrlDraft != viewModel.tokenUrl ||
+                keyDraft != viewModel.xApiKey
 
             SettingsSection("Configuration") {
                 OutlinedTextField(
@@ -109,6 +116,30 @@ fun SettingsScreen(
                     isError = urlInvalid,
                     supportingText = {
                         Text(if (urlInvalid) "Must start with wss:// or ws://" else "Applies on next connect")
+                    },
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Uri,
+                        autoCorrectEnabled = false
+                    )
+                )
+
+                Spacer(Modifier.height(8.dp))
+
+                OutlinedTextField(
+                    value = tokenUrlDraft,
+                    onValueChange = { tokenUrlDraft = it },
+                    label = { Text("Token endpoint") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    isError = tokenUrlInvalid,
+                    supportingText = {
+                        Text(
+                            if (tokenUrlInvalid) {
+                                "Must start with https://"
+                            } else {
+                                "POSTed to for an access token before connecting"
+                            }
+                        )
                     },
                     keyboardOptions = KeyboardOptions(
                         keyboardType = KeyboardType.Uri,
@@ -161,7 +192,13 @@ fun SettingsScreen(
             }
 
             Button(
-                onClick = { viewModel.saveConfig(urlDraft.trim(), keyDraft.trim()) },
+                onClick = {
+                    viewModel.saveConfig(
+                        url = urlDraft.trim(),
+                        apiKey = keyDraft.trim(),
+                        tokenEndpoint = tokenUrlDraft.trim(),
+                    )
+                },
                 enabled = isDirty && draftValid,
                 modifier = Modifier.fillMaxWidth()
             ) {

@@ -43,6 +43,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         const val PREFS_NAME = "geo_vision_config"
         const val PREF_API_KEY = "api_key"
         const val PREF_BASE_URL = "base_url"
+        const val PREF_TOKEN_URL = "token_url"
     }
 
     private val prefs =
@@ -55,13 +56,17 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         private set
     var geoVisionUrl by mutableStateOf(prefs.getString(PREF_BASE_URL, null) ?: BuildConfig.BASE_URL)
         private set
+    var tokenUrl by mutableStateOf(prefs.getString(PREF_TOKEN_URL, null) ?: BuildConfig.TOKEN_URL)
+        private set
 
-    fun saveConfig(url: String, apiKey: String) {
+    fun saveConfig(url: String, apiKey: String, tokenEndpoint: String) {
         geoVisionUrl = url
         xApiKey = apiKey
+        tokenUrl = tokenEndpoint
         prefs.edit()
             .putString(PREF_BASE_URL, url)
             .putString(PREF_API_KEY, apiKey)
+            .putString(PREF_TOKEN_URL, tokenEndpoint)
             .apply()
         log("Config saved")
     }
@@ -69,11 +74,18 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun resetConfigToDefaults() {
         xApiKey = BuildConfig.API_KEY
         geoVisionUrl = BuildConfig.BASE_URL
-        prefs.edit().remove(PREF_API_KEY).remove(PREF_BASE_URL).apply()
+        tokenUrl = BuildConfig.TOKEN_URL
+        prefs.edit()
+            .remove(PREF_API_KEY)
+            .remove(PREF_BASE_URL)
+            .remove(PREF_TOKEN_URL)
+            .apply()
     }
 
     val isConfigModified: Boolean
-        get() = xApiKey != BuildConfig.API_KEY || geoVisionUrl != BuildConfig.BASE_URL
+        get() = xApiKey != BuildConfig.API_KEY ||
+            geoVisionUrl != BuildConfig.BASE_URL ||
+            tokenUrl != BuildConfig.TOKEN_URL
 
     // Connection state
     var connectionStatus by mutableStateOf("Disconnected")
@@ -348,17 +360,21 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     private suspend fun fetchToken(): Triple<String, String, String>? = withContext(Dispatchers.IO) {
-        val metadata = buildTokenMetadata()
-        val url = URL("https://lk-va-token.diq.geoiq.ai/stg/v1/token")
-        val conn = url.openConnection() as HttpsURLConnection
-        conn.requestMethod = "POST"
-        conn.setRequestProperty("Content-Type", "application/json")
-        conn.setRequestProperty("x-api-key", xApiKey)
-        conn.setRequestProperty("metadata", metadata.toString())
-        conn.doOutput = true
-        val body = JSONObject().apply { put("metadata", metadata) }
-        conn.outputStream.bufferedWriter().use { it.write(body.toString()) }
+        var conn: HttpsURLConnection? = null
+        // URL() and openConnection() are inside the try because tokenUrl is user-editable:
+        // a malformed value throws MalformedURLException and a non-https one fails the
+        // HttpsURLConnection cast. Uncaught, either would crash viewModelScope.
         try {
+            val metadata = buildTokenMetadata()
+            conn = (URL(tokenUrl).openConnection() as HttpsURLConnection).apply {
+                requestMethod = "POST"
+                setRequestProperty("Content-Type", "application/json")
+                setRequestProperty("x-api-key", xApiKey)
+                setRequestProperty("metadata", metadata.toString())
+                doOutput = true
+            }
+            val body = JSONObject().apply { put("metadata", metadata) }
+            conn.outputStream.bufferedWriter().use { it.write(body.toString()) }
             val response = conn.inputStream.bufferedReader().use { it.readText() }
             val json = JSONObject(response)
             Triple(json.getString("accessToken"), json.getString("room_name"), json.getString("identity"))
@@ -366,7 +382,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             Log.e("MainViewModel", "Token fetch failed", e)
             null
         } finally {
-            conn.disconnect()
+            conn?.disconnect()
         }
     }
 
