@@ -38,6 +38,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -46,9 +47,10 @@ fun ChatScreen(
     onOpenSettings: () -> Unit = {},
     viewModel: MainViewModel = viewModel(),
 ) {
+    val state by viewModel.state.collectAsStateWithLifecycle()
     var draft by remember { mutableStateOf("") }
     val listState = rememberLazyListState()
-    val messages = viewModel.chatMessages
+    val messages = state.chatMessages
 
     LaunchedEffect(messages.size) {
         if (messages.isNotEmpty()) listState.animateScrollToItem(messages.lastIndex)
@@ -86,7 +88,7 @@ fun ChatScreen(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = if (viewModel.isConnected) {
+                        text = if (state.isConnected) {
                             "No messages yet. Transcriptions and data-channel messages appear here."
                         } else {
                             "Not connected. Start a session from the Session tab."
@@ -122,17 +124,17 @@ fun ChatScreen(
                     value = draft,
                     onValueChange = { draft = it },
                     modifier = Modifier.weight(1f),
-                    enabled = viewModel.isConnected,
+                    enabled = state.isConnected,
                     placeholder = { Text("Message") },
                     maxLines = 4,
                     shape = RoundedCornerShape(24.dp)
                 )
                 FilledIconButton(
                     onClick = {
-                        viewModel.sendChatMessage(draft)
+                        viewModel.onIntent(MainIntent.SendChatMessage(draft))
                         draft = ""
                     },
-                    enabled = viewModel.isConnected && draft.isNotBlank()
+                    enabled = state.isConnected && draft.isNotBlank()
                 ) {
                     Icon(Icons.AutoMirrored.Filled.Send, contentDescription = "Send")
                 }

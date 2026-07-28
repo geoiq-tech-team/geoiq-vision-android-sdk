@@ -41,6 +41,8 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.geoiq.geoiq_android_lk_vision_bot_sdk.MainIntent
 import com.geoiq.geoiq_android_lk_vision_bot_sdk.MainViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -49,6 +51,8 @@ fun SettingsScreen(
     onBack: () -> Unit = {},
     viewModel: MainViewModel = viewModel(),
 ) {
+    val state by viewModel.state.collectAsStateWithLifecycle()
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -60,8 +64,8 @@ fun SettingsScreen(
                 },
                 actions = {
                     IconButton(
-                        onClick = viewModel::resetConfigToDefaults,
-                        enabled = viewModel.isConfigModified
+                        onClick = { viewModel.onIntent(MainIntent.ResetConfig) },
+                        enabled = state.isConfigModified
                     ) {
                         Icon(Icons.Default.Restore, contentDescription = "Reset to build defaults")
                     }
@@ -84,14 +88,14 @@ fun SettingsScreen(
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            var urlDraft by rememberSaveable { mutableStateOf(viewModel.geoVisionUrl) }
-            var tokenUrlDraft by rememberSaveable { mutableStateOf(viewModel.tokenUrl) }
-            var keyDraft by rememberSaveable { mutableStateOf(viewModel.xApiKey) }
+            var urlDraft by rememberSaveable { mutableStateOf(state.geoVisionUrl) }
+            var tokenUrlDraft by rememberSaveable { mutableStateOf(state.tokenUrl) }
+            var keyDraft by rememberSaveable { mutableStateOf(state.apiKey) }
 
-            LaunchedEffect(viewModel.geoVisionUrl, viewModel.tokenUrl, viewModel.xApiKey) {
-                urlDraft = viewModel.geoVisionUrl
-                tokenUrlDraft = viewModel.tokenUrl
-                keyDraft = viewModel.xApiKey
+            LaunchedEffect(state.geoVisionUrl, state.tokenUrl, state.apiKey) {
+                urlDraft = state.geoVisionUrl
+                tokenUrlDraft = state.tokenUrl
+                keyDraft = state.apiKey
             }
 
             val urlInvalid = urlDraft.isNotBlank() &&
@@ -100,9 +104,9 @@ fun SettingsScreen(
             val tokenUrlInvalid = tokenUrlDraft.isNotBlank() && !tokenUrlDraft.startsWith("https://")
             val draftValid = !urlInvalid && !tokenUrlInvalid &&
                 urlDraft.isNotBlank() && tokenUrlDraft.isNotBlank() && keyDraft.isNotBlank()
-            val isDirty = urlDraft != viewModel.geoVisionUrl ||
-                tokenUrlDraft != viewModel.tokenUrl ||
-                keyDraft != viewModel.xApiKey
+            val isDirty = urlDraft != state.geoVisionUrl ||
+                tokenUrlDraft != state.tokenUrl ||
+                keyDraft != state.apiKey
 
             SettingsSection("Configuration") {
                 OutlinedTextField(
@@ -191,10 +195,12 @@ fun SettingsScreen(
 
             Button(
                 onClick = {
-                    viewModel.saveConfig(
-                        url = urlDraft.trim(),
-                        apiKey = keyDraft.trim(),
-                        tokenEndpoint = tokenUrlDraft.trim(),
+                    viewModel.onIntent(
+                        MainIntent.SaveConfig(
+                            geoVisionUrl = urlDraft.trim(),
+                            apiKey = keyDraft.trim(),
+                            tokenUrl = tokenUrlDraft.trim(),
+                        )
                     )
                 },
                 enabled = isDirty && draftValid,

@@ -43,6 +43,8 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
@@ -54,6 +56,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import io.livekit.android.renderer.SurfaceViewRenderer
 import livekit.org.webrtc.RendererCommon
@@ -72,12 +75,21 @@ fun SDKInteractionScreen(
     onOpenSettings: () -> Unit = {},
     viewModel: MainViewModel = viewModel(),
 ) {
+    val state by viewModel.state.collectAsStateWithLifecycle()
     val rendererRef = remember { mutableStateOf<SurfaceViewRenderer?>(null) }
+
+    LaunchedEffect(Unit) {
+        viewModel.effects.collect { effect ->
+            when (effect) {
+                is MainEffect.CameraFlipped -> rendererRef.value?.setMirror(!effect.isFrontCamera)
+            }
+        }
+    }
 
     // Dual-key: a replaced renderer must re-attach even when the track is unchanged.
     // onDispose must remove the renderer before AndroidView releases it, or LiveKit keeps
     // pushing frames into a released EGL surface once this screen leaves the NavDisplay.
-    val localVideoTrack = viewModel.localVideoTrack
+    val localVideoTrack = state.localVideoTrack
     DisposableEffect(localVideoTrack, rendererRef.value) {
         val renderer = rendererRef.value
         if (renderer != null && localVideoTrack != null) {
@@ -92,7 +104,7 @@ fun SDKInteractionScreen(
     }
 
     val pickFileLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
-        if (uri != null && viewModel.isConnected) viewModel.sendFile(uri)
+        if (uri != null && state.isConnected) viewModel.onIntent(MainIntent.SendFile(uri))
     }
 
     Scaffold(
@@ -122,43 +134,39 @@ fun SDKInteractionScreen(
         ) {
             Spacer(Modifier.height(4.dp))
 
-            key(viewModel.rendererSession) {
-                VideoPreviewCard(rendererRef, viewModel.isCameraEnabled)
+            key(state.rendererSession) {
+                VideoPreviewCard(rendererRef, state.isCameraEnabled)
             }
 
             StatusCard(
-                status = viewModel.connectionStatus,
-                isConnected = viewModel.isConnected,
-                isConnecting = viewModel.isConnecting,
-                quality = viewModel.connectionQuality,
-                isSpeaking = viewModel.isSpeaking,
-                agentState = viewModel.agentState
+                status = state.connectionStatus,
+                isConnected = state.isConnected,
+                isConnecting = state.isConnecting,
+                quality = state.connectionQuality,
+                isSpeaking = state.isSpeaking,
+                agentState = state.agentState
             )
 
             ConnectionControls(
-                isConnecting = viewModel.isConnecting,
-                isConnected = viewModel.isConnected,
-                onConnect = { viewModel.connect() },
-                onDisconnect = { viewModel.disconnect() }
+                isConnecting = state.isConnecting,
+                isConnected = state.isConnected,
+                onConnect = { viewModel.onIntent(MainIntent.Connect) },
+                onDisconnect = { viewModel.onIntent(MainIntent.Disconnect) }
             )
 
             MediaControls(
-                enabled = viewModel.isConnected,
-                isCameraEnabled = viewModel.isCameraEnabled,
-                isMicrophoneEnabled = viewModel.isMicrophoneEnabled,
-                isFlipping = viewModel.isFlippingCamera,
-                onToggleCamera = { viewModel.toggleCamera() },
-                onToggleMicrophone = { viewModel.toggleMicrophone() },
-                onFlipCamera = {
-                    viewModel.flipCamera { isFront ->
-                        rendererRef.value?.setMirror(!isFront)
-                    }
-                }
+                enabled = state.isConnected,
+                isCameraEnabled = state.isCameraEnabled,
+                isMicrophoneEnabled = state.isMicrophoneEnabled,
+                isFlipping = state.isFlippingCamera,
+                onToggleCamera = { viewModel.onIntent(MainIntent.ToggleCamera) },
+                onToggleMicrophone = { viewModel.onIntent(MainIntent.ToggleMicrophone) },
+                onFlipCamera = { viewModel.onIntent(MainIntent.FlipCamera) }
             )
 
             OutlinedButton(
                 onClick = { pickFileLauncher.launch("image/*") },
-                enabled = viewModel.isConnected,
+                enabled = state.isConnected,
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Icon(Icons.Default.AttachFile, contentDescription = null)
@@ -166,7 +174,7 @@ fun SDKInteractionScreen(
                 Text("Send Image")
             }
 
-            EventLogCard(events = viewModel.eventLog)
+            EventLogCard(events = state.eventLog)
 
             Spacer(Modifier.height(8.dp))
         }
