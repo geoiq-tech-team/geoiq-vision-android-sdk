@@ -7,6 +7,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
+import com.geoiq.geoiq_android_lk_vision_bot_sdk.navigation.GeoVisionNavHost
 import com.geoiq.geoiq_android_lk_vision_bot_sdk.ui.theme.GEOIQANDROIDLKVISIONBOTSDKTheme
 
 class MainActivity : ComponentActivity() {
@@ -19,7 +20,7 @@ class MainActivity : ComponentActivity() {
         requestMissingPermissions()
         setContent {
             GEOIQANDROIDLKVISIONBOTSDKTheme {
-                SDKInteractionScreen()
+                GeoVisionNavHost()
             }
         }
     }

@@ -1,21 +1,32 @@
 [versions]
 # Build tooling
+# Kotlin 2.x uses the Compose Compiler Gradle plugin (org.jetbrains.kotlin.plugin.compose),
+# which is versioned in lockstep with Kotlin — there is no separate composeCompiler version
+# and `composeOptions.kotlinCompilerExtensionVersion` no longer applies.
 agp = "8.11.1"
-kotlin = "1.9.0"
-composeCompiler = "1.5.1"
+kotlin = "2.2.21"
 
-# Android SDK levels — both modules must agree
-compileSdk = "34"
+# Android SDK levels — both modules must agree.
+# compileSdk 36 is required by androidx.navigation3.
+compileSdk = "36"
 minSdk = "23"
-targetSdk = "34"
+targetSdk = "36"
 
 # AndroidX / Google
-coreKtx = "1.12.0"
-appcompat = "1.6.1"
-material = "1.11.0"
-lifecycle = "2.7.0"
-activityCompose = "1.8.2"
-composeBom = "2023.08.00"
+# Ceilings are set by AGP 8.11.1 + compileSdk 36 (checked via each artifact's
+# aar-metadata.properties): core-ktx 1.19.0 and activity-compose 1.13.0 both
+# require AGP 9.1, so they are deliberately NOT used.
+coreKtx = "1.18.0"          # minCompileSdk 36, minAgp 8.9.1
+appcompat = "1.7.1"
+material = "1.13.0"
+lifecycle = "2.10.0"        # matches navigation3 1.1.4's lifecycle-runtime floor
+activityCompose = "1.12.4"  # minCompileSdk 36, minAgp 8.9.1
+composeBom = "2026.01.00"   # -> Compose 1.10.1, satisfies navigation3's 1.10.0 floor
+
+# Navigation 3 — back stack is owned by the caller; NavDisplay replaces NavHost.
+# Requires compileSdk 36+ and the Kotlin serialization plugin (NavKey is @Serializable).
+navigation3 = "1.1.4"
+kotlinxSerialization = "1.11.0"
 
 livekit = "2.23.5"
 livekitComposeComponents = "2.2.0"
@@ -50,6 +61,13 @@ androidx-compose-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-
 androidx-compose-material3 = { group = "androidx.compose.material3", name = "material3" }
 androidx-compose-material-icons-extended = { group = "androidx.compose.material", name = "material-icons-extended" }
 
+# Navigation 3 — lifecycle-viewmodel-navigation3 provides NavEntry-scoped ViewModels.
+# It is NOT used here: MainViewModel stays activity-scoped so a live LiveKit session
+# survives navigation (see MainActivity / VisionBotSDKManager being a process singleton).
+androidx-navigation3-runtime = { group = "androidx.navigation3", name = "navigation3-runtime", version.ref = "navigation3" }
+androidx-navigation3-ui = { group = "androidx.navigation3", name = "navigation3-ui", version.ref = "navigation3" }
+kotlinx-serialization-core = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-core", version.ref = "kotlinxSerialization" }
+
 livekit-android = { group = "io.livekit", name = "livekit-android", version.ref = "livekit" }
 livekit-android-compose-components = { group = "io.livekit", name = "livekit-android-compose-components", version.ref = "livekitComposeComponents" }
 
@@ -61,3 +79,7 @@ androidx-test-espresso-core = { group = "androidx.test.espresso", name = "espres
 android-application = { id = "com.android.application", version.ref = "agp" }
 android-library = { id = "com.android.library", version.ref = "agp" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+# Required on Kotlin 2.x for any module with Compose code — replaces kotlinCompilerExtensionVersion.
+kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+# Required by Navigation 3: NavKey implementations are @Serializable.
+kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }

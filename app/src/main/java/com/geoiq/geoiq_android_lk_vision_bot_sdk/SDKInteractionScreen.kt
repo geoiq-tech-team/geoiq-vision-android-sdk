@@ -40,7 +40,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
@@ -69,13 +69,24 @@ import androidx.compose.material3.ButtonDefaults
 fun SDKInteractionScreen(viewModel: MainViewModel = viewModel()) {
     val rendererRef = remember { mutableStateOf<SurfaceViewRenderer?>(null) }
 
-    // Side effect: attach the local video track whenever it changes
+    // Side effect: attach the local video track whenever either the track or the renderer
+    // changes (dual-key — a new renderer must re-attach even if the track is unchanged).
+    //
+    // DisposableEffect, not LaunchedEffect: now that this screen sits inside a NavDisplay it
+    // can be disposed while the LiveKit session stays connected. The renderer must be removed
+    // as a frame sink before it is released, or LiveKit keeps pushing frames into a released
+    // EGL surface. onDispose also runs when the keys change, so re-attach is still correct.
     val localVideoTrack = viewModel.localVideoTrack
-    LaunchedEffect(localVideoTrack, rendererRef.value) {
-        val renderer = rendererRef.value ?: return@LaunchedEffect
-        if (localVideoTrack != null) {
+    DisposableEffect(localVideoTrack, rendererRef.value) {
+        val renderer = rendererRef.value
+        if (renderer != null && localVideoTrack != null) {
             VisionBotSDKManager.initializeVideoRenderer(renderer)
             localVideoTrack.addRenderer(renderer)
+        }
+        onDispose {
+            if (renderer != null && localVideoTrack != null) {
+                localVideoTrack.removeRenderer(renderer)
+            }
         }
     }
 
