@@ -104,15 +104,15 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
 
+    val sdkModule = "com.github.geoiq-tech-team:geoiq-vision-android-sdk"
     val sdkVariant = SdkVariant.SNAPSHOT
     when (sdkVariant) {
         SdkVariant.RELEASE -> {
-            implementation("com.github.geoiq-tech-team:geoiq-vision-android-sdk:v1.0.7")
+            implementation("$sdkModule:${libs.versions.geoiqVisionSdkRelease.get()}")
         }
 
         SdkVariant.SNAPSHOT -> {
-            val tag = "siva~refactor-SNAPSHOT"
-            implementation("com.github.geoiq-tech-team:geoiq-vision-android-sdk:$tag")
+            implementation("$sdkModule:${libs.versions.geoiqVisionSdkSnapshot.get()}")
         }
 
         SdkVariant.DEBUG -> {
