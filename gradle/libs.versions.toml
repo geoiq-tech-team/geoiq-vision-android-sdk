@@ -17,7 +17,6 @@ lifecycle = "2.7.0"
 activityCompose = "1.8.2"
 composeBom = "2023.08.00"
 
-# LiveKit — exposed via api() in the SDK module, so these are part of the public contract
 livekit = "2.23.5"
 livekitComposeComponents = "2.2.0"
 

@@ -118,7 +118,7 @@ key(viewModel.rendererSession) {
 // onRelease must NOT null out rendererRef — Compose calls factory BEFORE onRelease on key change
 AndroidView(
     factory = { ctx ->
-        SurfaceViewRenderer(ctx).apply { rendererRef.value = this ... }
+        SurfaceViewRenderer(ctx).apply { rendererRef.value = this }
     },
     onRelease = { it.release() }  // no rendererRef.value = null here
 )
