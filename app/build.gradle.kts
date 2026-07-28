@@ -3,6 +3,10 @@ plugins {
     alias(libs.plugins.kotlin.android)
 }
 
+enum class SdkVariant {
+    RELEASE, SNAPSHOT, DEBUG
+}
+
 android {
     namespace = "com.geoiq.geoiq_android_lk_vision_bot_sdk"
     compileSdk = libs.versions.compileSdk.get().toInt()
@@ -72,7 +76,19 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
 
-    implementation(project(":GEOIQ-ANDROID-LK-VISION-BOT-SDK"))
-//    implementation ("com.github.geoiq-tech-team:geoiq-vision-android-sdk:v1.0.7")
+    val sdkVariant = SdkVariant.SNAPSHOT
+    when (sdkVariant) {
+        SdkVariant.RELEASE -> {
+            implementation("com.github.geoiq-tech-team:geoiq-vision-android-sdk:v1.0.7")
+        }
 
+        SdkVariant.SNAPSHOT -> {
+            val tag = "siva~refactor-SNAPSHOT"
+            implementation("com.github.geoiq-tech-team:geoiq-vision-android-sdk:$tag")
+        }
+
+        SdkVariant.DEBUG -> {
+            implementation(project(":GEOIQ-ANDROID-LK-VISION-BOT-SDK"))
+        }
+    }
 }
