@@ -1,6 +1,4 @@
-# SDK module ProGuard rules.
-# NOTE: isMinifyEnabled = false in build.gradle.kts, so this file does NOT run today.
-# It is kept accurate so enabling minification in the future is safe.
+# SDK module ProGuard/R8 rules — applied when building the release AAR.
 # Rules that affect SDK consumers live in consumer-rules.pro.
 
 # ── SDK public API ────────────────────────────────────────────────────────────
