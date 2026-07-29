@@ -119,7 +119,7 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.test.manifest)
 
     val sdkModule = "com.github.geoiq-tech-team:geoiq-vision-android-sdk"
-    val sdkVariant = SdkVariant.SNAPSHOT
+    val sdkVariant = SdkVariant.DEBUG
     when (sdkVariant) {
         SdkVariant.RELEASE -> {
             implementation("$sdkModule:${libs.versions.geoiqVisionSdkRelease.get()}")
@@ -130,7 +130,7 @@ dependencies {
         }
 
         SdkVariant.DEBUG -> {
-            implementation(project(":GEOIQ-ANDROID-LK-VISION-BOT-SDK"))
+            implementation(project(":sdk"))
         }
     }
 }
