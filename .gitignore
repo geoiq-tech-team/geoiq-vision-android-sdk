@@ -17,6 +17,7 @@ local.properties
 .idea/deploymentTargetSelector.xml
 .idea/deviceManager.xml
 .idea/markdown.xml
+.idea/obfuscation-pro.xml
 *.iml
 captures/
 

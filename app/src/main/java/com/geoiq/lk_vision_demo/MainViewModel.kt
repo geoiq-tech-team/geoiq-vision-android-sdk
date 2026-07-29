@@ -32,6 +32,7 @@ import kotlinx.coroutines.withTimeoutOrNull
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import kotlin.time.Duration.Companion.milliseconds
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -108,7 +109,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             log("Handover → ${target.name}: disconnecting current session")
             VisionBotSDKManager.disconnectFromGeoVisionRoom()
-            val disconnected = withTimeoutOrNull(DISCONNECT_AWAIT_TIMEOUT_MS) {
+            val disconnected = withTimeoutOrNull(DISCONNECT_AWAIT_TIMEOUT_MS.milliseconds) {
                 VisionBotSDKManager.events.first { it is GeoVisionEvent.Disconnected }
             }
             if (disconnected == null) {

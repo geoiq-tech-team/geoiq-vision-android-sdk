@@ -44,3 +44,8 @@
 -dontwarn com.sun.nio.sctp.NotificationHandler
 -dontwarn com.sun.nio.sctp.SctpChannel
 -dontwarn com.sun.nio.sctp.SctpServerChannel
+
+# Obfuscation diagnostics used by coverage, retrace, and shrink analysis.
+-printmapping build/outputs/proguard/mapping.txt
+-printseeds build/outputs/proguard/seeds.txt
+-printusage build/outputs/proguard/usage.txt

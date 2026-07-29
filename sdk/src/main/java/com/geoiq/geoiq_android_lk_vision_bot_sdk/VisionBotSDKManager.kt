@@ -59,6 +59,7 @@ object VisionBotSDKManager {
     // Activity is retained. Lint can't see through the constructor to verify this.
     @SuppressLint("StaticFieldLeak")
     var currentRoom: Room? = null
+        private set
     private var roomEventsJob: Job? = null
 
     // WeakHashMap lets renderers be GC'd when no longer referenced externally,
@@ -124,8 +125,6 @@ object VisionBotSDKManager {
         sdkScope.launch {
             try {
                 roomInstance.connect(url = socketUrl, token = accessToken)
-            } catch (e: RoomException.ConnectException) {
-                _events.tryEmit(GeoVisionEvent.Error("Connection setup failed: ${e.message}", e))
             } catch (e: Exception) {
                 _events.tryEmit(GeoVisionEvent.Error("Connection setup failed: ${e.message}", e))
             }
