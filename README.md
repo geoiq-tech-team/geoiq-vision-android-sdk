@@ -248,18 +248,63 @@ The `app/` module is a self-contained Jetpack Compose app demonstrating the full
 
 ---
 
+## Performance
+
+The SDK ships with a [Baseline Profile](https://developer.android.com/topic/performance/baselineprofiles/overview) that pre-compiles critical code paths (SDK init, LiveKit renderer setup, WebRTC EGL surface creation) ahead of time. This means consumers get optimised startup performance from the very first app launch — no warmup runs needed.
+
+**Cold start improvement (measured on POCO 25028PC03I, Android 15):**
+
+| Compilation mode | Time to initial display |
+|---|---|
+| No compilation (first install, no profile) | 885 ms |
+| With baseline profile | 677 ms (**-23.5%**) |
+
+The profile is bundled inside the AAR and merged into the consumer app's profile automatically by AGP at build time. The SDK includes `profileinstaller` as a transitive dependency, so no additional setup is required.
+
+### Running benchmarks
+
+The `benchmark/` module contains macrobenchmark tests to measure startup and frame timing. Run on a physical device for reliable results:
+
+```bash
+./gradlew :benchmark:connectedBenchmarkAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.geoiq.benchmark.StartupBenchmark
+```
+
+To run a single test:
+
+```bash
+./gradlew :benchmark:connectedBenchmarkAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.geoiq.benchmark.StartupBenchmark#startupBaselineProfile
+```
+
+Results are written to `benchmark/build/outputs/connected_android_test_additional_output/`.
+
+### Regenerating the baseline profile
+
+```bash
+./gradlew :benchmark:connectedBenchmarkAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.geoiq.benchmark.BaselineProfileGenerator
+```
+
+The generated profile is at `benchmark/build/outputs/connected_android_test_additional_output/benchmark/connected/<device>/BaselineProfileGenerator_generate-startup-prof.txt`. Filter for SDK-relevant classes and copy to `sdk/src/main/baseline-prof.txt`.
+
+---
+
 ## Repo Structure
 
 ```
 sdk/                                    # SDK module
-└── VisionBotSDKManager.kt              # Singleton SDK entry point
-└── GeoVisionEvent.kt                   # Sealed event hierarchy
-└── GeoVisionTypeAliases.kt             # Re-exported LiveKit type aliases (so that extra dependency is not required)
+├── VisionBotSDKManager.kt              # Singleton SDK entry point
+├── GeoVisionEvent.kt                   # Sealed event hierarchy
+├── GeoVisionTypeAliases.kt             # Re-exported LiveKit type aliases
+└── baseline-prof.txt                   # Baseline profile (ships in AAR)
 
 app/                                    # Sample Jetpack Compose app
-└── MainActivity.kt                     # Entry point, permission handling
-└── SDKInteractionScreen.kt             # Full UI: video preview, controls, event log
+├── MainActivity.kt                     # Entry point, permission handling
+├── VoiceScreen.kt                      # Video UI: preview, controls, event log
 └── MainViewModel.kt                    # State holder, event collection, SDK calls
+
+benchmark/                              # Macrobenchmark module
+├── StartupBenchmark.kt                 # Cold start timing across compilation modes
+├── FrameTimingBenchmark.kt             # Frame timing during scroll interactions
+└── BaselineProfileGenerator.kt         # Generates baseline profile rules
 
 README.md
 ```
