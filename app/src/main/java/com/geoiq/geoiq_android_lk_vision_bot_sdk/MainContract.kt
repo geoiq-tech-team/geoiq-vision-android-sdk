@@ -21,6 +21,7 @@ data class MainUiState(
     val isFlippingCamera: Boolean = false,
     val agentState: String = "",
     val localVideoTrack: LocalVideoTrack? = null,
+    val activeMode: SessionMode = SessionMode.Video,
     val rendererSession: Int = 0,
     val eventLog: List<String> = emptyList(),
     val chatMessages: List<ChatMessage> = emptyList(),
@@ -37,9 +38,12 @@ data class MainUiState(
             tokenUrl != BuildConfig.TOKEN_URL
 }
 
+enum class SessionMode { Video, Chat }
+
 sealed interface MainIntent {
-    data object Connect : MainIntent
+    data class Connect(val mode: SessionMode) : MainIntent
     data object Disconnect : MainIntent
+    data class Handover(val target: SessionMode) : MainIntent
     data object ToggleCamera : MainIntent
     data object ToggleMicrophone : MainIntent
     data object FlipCamera : MainIntent
@@ -56,4 +60,5 @@ sealed interface MainIntent {
 
 sealed interface MainEffect {
     data class CameraFlipped(val isFrontCamera: Boolean) : MainEffect
+    data class HandoverReady(val target: SessionMode) : MainEffect
 }

@@ -3,14 +3,18 @@ package com.geoiq.geoiq_android_lk_vision_bot_sdk
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import io.livekit.android.room.datastream.StreamTextOptions
 import io.livekit.android.room.track.Track
-import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -18,11 +22,12 @@ import java.util.Locale
 class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     private companion object {
-        const val CHAT_TOPIC = "chat"
+        const val CHAT_TOPIC = "lk_va_publish"
         const val FILE_TOPIC = "send-file"
         const val BOT_CONNECTED_TOPIC = "vinay_bot_connected"
         const val AGENT_STATE_ATTRIBUTE = "lk.agent.state"
         const val MAX_EVENT_LOG_ENTRIES = 200
+        const val DISCONNECT_AWAIT_TIMEOUT_MS = 1500L
     }
 
     private val configStore = ConfigStore(application)
@@ -36,8 +41,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     )
     val state: StateFlow<MainUiState> = _state.asStateFlow()
 
-    private val _effects = Channel<MainEffect>(Channel.BUFFERED)
-    val effects = _effects.receiveAsFlow()
+    private val _effects = MutableSharedFlow<MainEffect>(extraBufferCapacity = 10)
+    val effects = _effects.asSharedFlow()
 
     init {
         restoreOngoingSession()
@@ -46,8 +51,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun onIntent(intent: MainIntent) {
         when (intent) {
-            MainIntent.Connect -> connect()
+            is MainIntent.Connect -> connect(intent.mode)
             MainIntent.Disconnect -> VisionBotSDKManager.disconnectFromGeoVisionRoom()
+            is MainIntent.Handover -> handover(intent.target)
             MainIntent.ToggleCamera -> toggleCamera()
             MainIntent.ToggleMicrophone -> toggleMicrophone()
             MainIntent.FlipCamera -> flipCamera()
@@ -59,15 +65,16 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    private fun connect() {
+    private fun connect(mode: SessionMode) {
         viewModelScope.launch {
+            _state.update { it.copy(activeMode = mode) }
             val current = _state.value
             val token = TokenClient.fetch(current.tokenUrl, current.apiKey)
             if (token == null) {
                 log("Failed to fetch token")
                 return@launch
             }
-            log("Connecting to ${token.roomName} as ${token.identity}")
+            log("Connecting (${mode.name}) to ${token.roomName} as ${token.identity}")
             VisionBotSDKManager.connectToGeoVisionRoom(
                 context = getApplication(),
                 socketUrl = current.geoVisionUrl,
@@ -76,6 +83,27 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     videoTrackCaptureDefaults = LocalVideoTrackOptions(position = CameraPosition.FRONT)
                 ),
             )
+        }
+    }
+
+    private fun handover(target: SessionMode) {
+        if (!_state.value.isConnected && !_state.value.isConnecting) {
+            viewModelScope.launch { _effects.emit(MainEffect.HandoverReady(target)) }
+            return
+        }
+        viewModelScope.launch {
+            log("Handover → ${target.name}: disconnecting current session")
+            VisionBotSDKManager.disconnectFromGeoVisionRoom()
+            val disconnected = withTimeoutOrNull(DISCONNECT_AWAIT_TIMEOUT_MS) {
+                VisionBotSDKManager.events.first { it is GeoVisionEvent.Disconnected }
+            }
+            if (disconnected == null) {
+                log("Handover: disconnect timed out, forcing cleanup")
+                VisionBotSDKManager.releaseRoomResources()
+            }
+            _effects.emit(MainEffect.HandoverReady(target))
+            log("Handover → ${target.name}: reconnecting")
+            connect(target)
         }
     }
 
@@ -103,7 +131,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             try {
                 if (VisionBotSDKManager.flipCameraPosition()) {
                     val track = VisionBotSDKManager.getLocalParticipant()?.getOrCreateDefaultVideoTrack()
-                    _effects.send(
+                    _effects.emit(
                         MainEffect.CameraFlipped(track?.options?.position == CameraPosition.FRONT)
                     )
                     log("Camera flipped")
@@ -140,14 +168,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 return@launch
             }
             addChatMessage(message, isLocal = true, sender = "You")
-            try {
-                localParticipant.publishData(
-                    message.toByteArray(Charsets.UTF_8),
-                    DataPublishReliability.RELIABLE,
-                    CHAT_TOPIC,
-                )
-            } catch (e: Exception) {
-                log("Chat send failed: ${e.message}")
+            val result = localParticipant.sendText(
+                message,
+                StreamTextOptions(topic = CHAT_TOPIC),
+            )
+            if (result.isFailure) {
+                log("Chat send failed: ${result.exceptionOrNull()?.message}")
             }
         }
     }
@@ -200,6 +226,24 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                         isMicrophoneEnabled = VisionBotSDKManager.isMicrophoneEnabled(),
                     )
                 }
+                viewModelScope.launch {
+                    when (_state.value.activeMode) {
+                        SessionMode.Video -> {
+                            VisionBotSDKManager.setCameraEnabled(true)
+                            VisionBotSDKManager.setMicrophoneEnabled(true)
+                        }
+                        SessionMode.Chat -> {
+                            VisionBotSDKManager.setCameraEnabled(false)
+                            VisionBotSDKManager.setMicrophoneEnabled(false)
+                        }
+                    }
+                    _state.update {
+                        it.copy(
+                            isCameraEnabled = VisionBotSDKManager.isCameraEnabled(),
+                            isMicrophoneEnabled = VisionBotSDKManager.isMicrophoneEnabled(),
+                        )
+                    }
+                }
             }
 
             is GeoVisionEvent.Disconnected -> {
@@ -237,18 +281,20 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
             is GeoVisionEvent.LocalTrackSubscribed -> {
                 log("Local track live: ${event.publication.source.name}")
-                when (event.publication.source?.name?.lowercase()) {
-                    "camera" -> {
-                        val track = VisionBotSDKManager.getLocalParticipant()
-                            ?.getTrackPublication(event.publication.source)?.track
-                        _state.update {
-                            it.copy(
-                                isCameraEnabled = true,
-                                localVideoTrack = track as? LocalVideoTrack ?: it.localVideoTrack,
-                            )
+                if (_state.value.activeMode == SessionMode.Video) {
+                    when (event.publication.source?.name?.lowercase()) {
+                        "camera" -> {
+                            val track = VisionBotSDKManager.getLocalParticipant()
+                                ?.getTrackPublication(event.publication.source)?.track
+                            _state.update {
+                                it.copy(
+                                    isCameraEnabled = true,
+                                    localVideoTrack = track as? LocalVideoTrack ?: it.localVideoTrack,
+                                )
+                            }
                         }
+                        "microphone" -> _state.update { it.copy(isMicrophoneEnabled = true) }
                     }
-                    "microphone" -> _state.update { it.copy(isMicrophoneEnabled = true) }
                 }
             }
 

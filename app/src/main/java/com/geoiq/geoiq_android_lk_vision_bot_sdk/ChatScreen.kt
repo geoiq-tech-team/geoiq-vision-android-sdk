@@ -13,6 +13,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Settings
@@ -36,6 +38,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -120,6 +123,12 @@ fun ChatScreen(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                val submitDraft = {
+                    if (draft.isNotBlank() && state.isConnected) {
+                        viewModel.onIntent(MainIntent.SendChatMessage(draft))
+                        draft = ""
+                    }
+                }
                 OutlinedTextField(
                     value = draft,
                     onValueChange = { draft = it },
@@ -127,13 +136,12 @@ fun ChatScreen(
                     enabled = state.isConnected,
                     placeholder = { Text("Message") },
                     maxLines = 4,
-                    shape = RoundedCornerShape(24.dp)
+                    shape = RoundedCornerShape(24.dp),
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
+                    keyboardActions = KeyboardActions(onSend = { submitDraft() }),
                 )
                 FilledIconButton(
-                    onClick = {
-                        viewModel.onIntent(MainIntent.SendChatMessage(draft))
-                        draft = ""
-                    },
+                    onClick = { submitDraft() },
                     enabled = state.isConnected && draft.isNotBlank()
                 ) {
                     Icon(Icons.AutoMirrored.Filled.Send, contentDescription = "Send")

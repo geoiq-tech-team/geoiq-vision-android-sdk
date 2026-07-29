@@ -27,10 +27,8 @@ import androidx.compose.material.icons.filled.MicOff
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Videocam
 import androidx.compose.material.icons.filled.VideocamOff
-import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
@@ -60,10 +58,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import io.livekit.android.renderer.SurfaceViewRenderer
 import livekit.org.webrtc.RendererCommon
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.ButtonDefaults
 
 /**
  * @author Sayak Mondal.
@@ -82,6 +78,7 @@ fun SDKInteractionScreen(
         viewModel.effects.collect { effect ->
             when (effect) {
                 is MainEffect.CameraFlipped -> rendererRef.value?.setMirror(!effect.isFrontCamera)
+                is MainEffect.HandoverReady -> {}
             }
         }
     }
@@ -122,7 +119,7 @@ fun SDKInteractionScreen(
                     actionIconContentColor = MaterialTheme.colorScheme.onPrimaryContainer
                 )
             )
-        }
+        },
     ) { padding ->
         Column(
             modifier = Modifier
@@ -145,13 +142,6 @@ fun SDKInteractionScreen(
                 quality = state.connectionQuality,
                 isSpeaking = state.isSpeaking,
                 agentState = state.agentState
-            )
-
-            ConnectionControls(
-                isConnecting = state.isConnecting,
-                isConnected = state.isConnected,
-                onConnect = { viewModel.onIntent(MainIntent.Connect) },
-                onDisconnect = { viewModel.onIntent(MainIntent.Disconnect) }
             )
 
             MediaControls(
@@ -289,49 +279,6 @@ private fun StatusCard(
                     )
                 }
             }
-        }
-    }
-}
-
-@Composable
-private fun ConnectionControls(
-    isConnecting: Boolean,
-    isConnected: Boolean,
-    onConnect: () -> Unit,
-    onDisconnect: () -> Unit
-) {
-    val canDisconnect = isConnected || isConnecting
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        Button(
-            onClick = onConnect,
-            enabled = !isConnecting && !isConnected,
-            modifier = Modifier.weight(1f),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = Color(0xFF2E7D32),
-                contentColor = Color.White
-            )
-        ) {
-            if (isConnecting) {
-                CircularProgressIndicator(
-                    modifier = Modifier.size(16.dp),
-                    strokeWidth = 2.dp,
-                    color = Color.White
-                )
-                Spacer(Modifier.width(8.dp))
-            }
-            Text(if (isConnecting) "Connecting..." else "Connect")
-        }
-        OutlinedButton(
-            onClick = onDisconnect,
-            enabled = canDisconnect,
-            modifier = Modifier.weight(1f),
-            colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFFC62828)),
-            border = BorderStroke(1.dp, if (canDisconnect) Color(0xFFC62828) else MaterialTheme.colorScheme.outline.copy(alpha = 0.38f))
-        ) {
-            Text("Disconnect")
         }
     }
 }
