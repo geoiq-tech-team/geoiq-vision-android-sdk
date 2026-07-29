@@ -1,4 +1,4 @@
-package com.geoiq.geoiq_android_lk_vision_bot_sdk.settings
+package com.geoiq.lk_vision_demo.settings
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -42,8 +42,8 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.geoiq.geoiq_android_lk_vision_bot_sdk.MainIntent
-import com.geoiq.geoiq_android_lk_vision_bot_sdk.MainViewModel
+import com.geoiq.lk_vision_demo.MainIntent
+import com.geoiq.lk_vision_demo.MainViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

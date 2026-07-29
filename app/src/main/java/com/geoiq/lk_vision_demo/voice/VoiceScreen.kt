@@ -1,9 +1,9 @@
-package com.geoiq.geoiq_android_lk_vision_bot_sdk.voice
+package com.geoiq.lk_vision_demo.voice
 
 import com.geoiq.geoiq_android_lk_vision_bot_sdk.ConnectionQuality
-import com.geoiq.geoiq_android_lk_vision_bot_sdk.MainEffect
-import com.geoiq.geoiq_android_lk_vision_bot_sdk.MainIntent
-import com.geoiq.geoiq_android_lk_vision_bot_sdk.MainViewModel
+import com.geoiq.lk_vision_demo.MainEffect
+import com.geoiq.lk_vision_demo.MainIntent
+import com.geoiq.lk_vision_demo.MainViewModel
 import com.geoiq.geoiq_android_lk_vision_bot_sdk.VisionBotSDKManager
 
 import androidx.activity.compose.rememberLauncherForActivityResult

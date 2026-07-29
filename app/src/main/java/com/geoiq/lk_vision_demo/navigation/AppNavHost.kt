@@ -1,4 +1,4 @@
-package com.geoiq.geoiq_android_lk_vision_bot_sdk.navigation
+package com.geoiq.lk_vision_demo.navigation
 
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
@@ -26,13 +26,13 @@ import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.ui.NavDisplay
-import com.geoiq.geoiq_android_lk_vision_bot_sdk.chat.ChatScreen
-import com.geoiq.geoiq_android_lk_vision_bot_sdk.MainEffect
-import com.geoiq.geoiq_android_lk_vision_bot_sdk.MainIntent
-import com.geoiq.geoiq_android_lk_vision_bot_sdk.MainViewModel
-import com.geoiq.geoiq_android_lk_vision_bot_sdk.voice.VoiceScreen
-import com.geoiq.geoiq_android_lk_vision_bot_sdk.SessionMode
-import com.geoiq.geoiq_android_lk_vision_bot_sdk.settings.SettingsScreen
+import com.geoiq.lk_vision_demo.chat.ChatScreen
+import com.geoiq.lk_vision_demo.MainEffect
+import com.geoiq.lk_vision_demo.MainIntent
+import com.geoiq.lk_vision_demo.MainViewModel
+import com.geoiq.lk_vision_demo.voice.VoiceScreen
+import com.geoiq.lk_vision_demo.SessionMode
+import com.geoiq.lk_vision_demo.settings.SettingsScreen
 
 @Composable
 fun AppNavHost(

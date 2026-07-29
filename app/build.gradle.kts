@@ -10,11 +10,11 @@ enum class SdkVariant {
 }
 
 android {
-    namespace = "com.geoiq.geoiq_android_lk_vision_bot_sdk"
+    namespace = "com.geoiq.lk_vision_demo"
     compileSdk = libs.versions.compileSdk.get().toInt()
 
     defaultConfig {
-        applicationId = "com.geoiq.geoiq_android_lk_vision_bot_sdk"
+        applicationId = "com.geoiq.lk_vision_demo"
         minSdk = libs.versions.minSdk.get().toInt()
         targetSdk = libs.versions.targetSdk.get().toInt()
         versionCode = 1

@@ -1,4 +1,4 @@
-package com.geoiq.geoiq_android_lk_vision_bot_sdk.ui.theme
+package com.geoiq.lk_vision_demo.ui.theme
 
 import androidx.compose.ui.graphics.Color
 

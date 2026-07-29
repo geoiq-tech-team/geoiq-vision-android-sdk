@@ -1,4 +1,4 @@
-package com.geoiq.geoiq_android_lk_vision_bot_sdk.data
+package com.geoiq.lk_vision_demo.data
 
 import android.content.Context
 import android.net.Uri

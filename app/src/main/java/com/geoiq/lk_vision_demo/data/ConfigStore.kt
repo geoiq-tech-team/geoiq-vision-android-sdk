@@ -1,8 +1,8 @@
-package com.geoiq.geoiq_android_lk_vision_bot_sdk.data
+package com.geoiq.lk_vision_demo.data
 
 import android.content.Context
 import androidx.core.content.edit
-import com.geoiq.geoiq_android_lk_vision_bot_sdk.BuildConfig
+import com.geoiq.lk_vision_demo.BuildConfig
 
 class ConfigStore(context: Context) {
 

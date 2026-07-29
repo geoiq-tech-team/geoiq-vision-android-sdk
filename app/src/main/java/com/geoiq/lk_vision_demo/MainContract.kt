@@ -1,6 +1,8 @@
-package com.geoiq.geoiq_android_lk_vision_bot_sdk
+package com.geoiq.lk_vision_demo
 
 import android.net.Uri
+import com.geoiq.geoiq_android_lk_vision_bot_sdk.ConnectionQuality
+import com.geoiq.geoiq_android_lk_vision_bot_sdk.LocalVideoTrack
 
 data class ChatMessage(
     val text: String,

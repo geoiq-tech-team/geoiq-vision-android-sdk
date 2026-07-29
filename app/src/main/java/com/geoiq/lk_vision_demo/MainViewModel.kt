@@ -1,12 +1,22 @@
-package com.geoiq.geoiq_android_lk_vision_bot_sdk
+package com.geoiq.lk_vision_demo
 
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.geoiq.geoiq_android_lk_vision_bot_sdk.data.ConfigStore
-import com.geoiq.geoiq_android_lk_vision_bot_sdk.data.SessionToken
-import com.geoiq.geoiq_android_lk_vision_bot_sdk.data.TokenClient
-import com.geoiq.geoiq_android_lk_vision_bot_sdk.data.copyUriToCache
+import com.geoiq.geoiq_android_lk_vision_bot_sdk.CameraPosition
+import com.geoiq.geoiq_android_lk_vision_bot_sdk.ConnectionQuality
+import com.geoiq.geoiq_android_lk_vision_bot_sdk.DataPublishReliability
+import com.geoiq.geoiq_android_lk_vision_bot_sdk.GeoVisionEvent
+import com.geoiq.geoiq_android_lk_vision_bot_sdk.GeoVisionRoomOptions
+import com.geoiq.geoiq_android_lk_vision_bot_sdk.GeoVisionRoomState
+import com.geoiq.geoiq_android_lk_vision_bot_sdk.LocalParticipant
+import com.geoiq.geoiq_android_lk_vision_bot_sdk.LocalVideoTrack
+import com.geoiq.geoiq_android_lk_vision_bot_sdk.LocalVideoTrackOptions
+import com.geoiq.geoiq_android_lk_vision_bot_sdk.VisionBotSDKManager
+import com.geoiq.lk_vision_demo.data.ConfigStore
+import com.geoiq.lk_vision_demo.data.SessionToken
+import com.geoiq.lk_vision_demo.data.TokenClient
+import com.geoiq.lk_vision_demo.data.copyUriToCache
 import io.livekit.android.room.datastream.StreamTextOptions
 import io.livekit.android.room.track.Track
 import kotlinx.coroutines.flow.MutableSharedFlow

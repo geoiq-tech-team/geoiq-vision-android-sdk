@@ -1,4 +1,4 @@
-package com.geoiq.geoiq_android_lk_vision_bot_sdk.navigation
+package com.geoiq.lk_vision_demo.navigation
 
 import androidx.navigation3.runtime.NavKey
 import kotlinx.serialization.Serializable
