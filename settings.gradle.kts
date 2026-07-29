@@ -21,3 +21,4 @@ dependencyResolutionManagement {
 rootProject.name = "geoiq-vision-android-sdk"
 include(":app")
 include(":sdk")
+include(":benchmark")

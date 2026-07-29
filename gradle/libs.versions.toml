@@ -29,6 +29,11 @@ livekitComposeComponents = "2.2.0"
 geoiqVisionSdkRelease = "v1.0.7"
 geoiqVisionSdkSnapshot = "siva~refactor-SNAPSHOT"
 
+# Benchmark
+benchmarkMacroJunit4 = "1.4.0"
+uiautomator = "2.3.0"
+profileinstaller = "1.4.1"
+
 # Test
 junit = "4.13.2"
 junitExt = "1.1.5"
@@ -61,6 +66,10 @@ kotlinx-serialization-core = { group = "org.jetbrains.kotlinx", name = "kotlinx-
 livekit-android = { group = "io.livekit", name = "livekit-android", version.ref = "livekit" }
 livekit-android-compose-components = { group = "io.livekit", name = "livekit-android-compose-components", version.ref = "livekitComposeComponents" }
 
+androidx-benchmark-macro-junit4 = { group = "androidx.benchmark", name = "benchmark-macro-junit4", version.ref = "benchmarkMacroJunit4" }
+androidx-profileinstaller = { group = "androidx.profileinstaller", name = "profileinstaller", version.ref = "profileinstaller" }
+androidx-test-uiautomator = { group = "androidx.test.uiautomator", name = "uiautomator", version.ref = "uiautomator" }
+
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-test-ext-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitExt" }
 androidx-test-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espresso" }
@@ -71,3 +80,4 @@ android-library = { id = "com.android.library", version.ref = "agp" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
+android-test = { id = "com.android.test", version.ref = "agp" }
