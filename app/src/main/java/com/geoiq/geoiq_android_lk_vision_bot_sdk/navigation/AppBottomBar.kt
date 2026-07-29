@@ -11,7 +11,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.vector.ImageVector
 
 private data class BottomBarDestination(
-    val key: GeoVisionNavKey,
+    val key: AppNavKey,
     val label: String,
     val icon: ImageVector,
 )
@@ -21,13 +21,13 @@ private val BottomBarDestinations = listOf(
     BottomBarDestination(Chat, "Chat", Icons.AutoMirrored.Filled.Chat),
 )
 
-internal fun GeoVisionNavKey?.isTopLevel(): Boolean =
+internal fun AppNavKey?.isTopLevel(): Boolean =
     BottomBarDestinations.any { it.key == this }
 
 @Composable
-fun GeoVisionBottomBar(
-    current: GeoVisionNavKey?,
-    onSelect: (GeoVisionNavKey) -> Unit,
+fun AppBottomBar(
+    current: AppNavKey?,
+    onSelect: (AppNavKey) -> Unit,
 ) {
     NavigationBar {
         BottomBarDestinations.forEach { destination ->

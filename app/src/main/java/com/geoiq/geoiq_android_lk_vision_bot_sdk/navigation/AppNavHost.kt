@@ -26,21 +26,21 @@ import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.ui.NavDisplay
-import com.geoiq.geoiq_android_lk_vision_bot_sdk.ChatScreen
+import com.geoiq.geoiq_android_lk_vision_bot_sdk.chat.ChatScreen
 import com.geoiq.geoiq_android_lk_vision_bot_sdk.MainEffect
 import com.geoiq.geoiq_android_lk_vision_bot_sdk.MainIntent
 import com.geoiq.geoiq_android_lk_vision_bot_sdk.MainViewModel
-import com.geoiq.geoiq_android_lk_vision_bot_sdk.SDKInteractionScreen
+import com.geoiq.geoiq_android_lk_vision_bot_sdk.voice.VoiceScreen
 import com.geoiq.geoiq_android_lk_vision_bot_sdk.SessionMode
-import com.geoiq.geoiq_android_lk_vision_bot_sdk.setting.SettingsScreen
+import com.geoiq.geoiq_android_lk_vision_bot_sdk.settings.SettingsScreen
 
 @Composable
-fun GeoVisionNavHost(
+fun AppNavHost(
     modifier: Modifier = Modifier,
     viewModel: MainViewModel = viewModel(),
 ) {
     val backStack = rememberNavBackStack(SdkInteraction)
-    val current = backStack.lastOrNull() as? GeoVisionNavKey
+    val current = backStack.lastOrNull() as? AppNavKey
     val state by viewModel.state.collectAsStateWithLifecycle()
 
     val openSettings = { if (backStack.lastOrNull() != Settings) backStack.add(Settings) }
@@ -62,14 +62,14 @@ fun GeoVisionNavHost(
         modifier = modifier,
         bottomBar = {
             if (current.isTopLevel()) {
-                GeoVisionBottomBar(
+                AppBottomBar(
                     current = current,
                     onSelect = { key ->
-                        if (key == current) return@GeoVisionBottomBar
+                        if (key == current) return@AppBottomBar
                         val target = when (key) {
                             is Chat -> SessionMode.Chat
                             is SdkInteraction -> SessionMode.Video
-                            else -> return@GeoVisionBottomBar
+                            else -> return@AppBottomBar
                         }
                         if (state.isConnected || state.isConnecting) {
                             viewModel.onIntent(MainIntent.Handover(target))
@@ -132,7 +132,7 @@ fun GeoVisionNavHost(
             modifier = Modifier.padding(bottom = innerPadding.calculateBottomPadding()),
             onBack = { backStack.removeLastOrNull() },
             entryProvider = entryProvider {
-                entry<SdkInteraction> { SDKInteractionScreen(onOpenSettings = openSettings) }
+                entry<SdkInteraction> { VoiceScreen(onOpenSettings = openSettings) }
                 entry<Chat> { ChatScreen(onOpenSettings = openSettings) }
                 entry<Settings> { SettingsScreen(onBack = goBack) }
             }
@@ -140,7 +140,7 @@ fun GeoVisionNavHost(
     }
 }
 
-private fun NavBackStack<NavKey>.switchTopLevelTo(key: GeoVisionNavKey) {
+private fun NavBackStack<NavKey>.switchTopLevelTo(key: AppNavKey) {
     if (lastOrNull() == key) return
     while (size > 1) removeAt(size - 1)
     // Must never go empty — NavDisplay crashes on an empty back stack.

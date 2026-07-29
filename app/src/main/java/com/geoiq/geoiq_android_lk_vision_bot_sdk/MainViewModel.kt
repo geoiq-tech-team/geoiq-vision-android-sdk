@@ -3,6 +3,10 @@ package com.geoiq.geoiq_android_lk_vision_bot_sdk
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.geoiq.geoiq_android_lk_vision_bot_sdk.data.ConfigStore
+import com.geoiq.geoiq_android_lk_vision_bot_sdk.data.SessionToken
+import com.geoiq.geoiq_android_lk_vision_bot_sdk.data.TokenClient
+import com.geoiq.geoiq_android_lk_vision_bot_sdk.data.copyUriToCache
 import io.livekit.android.room.datastream.StreamTextOptions
 import io.livekit.android.room.track.Track
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -35,7 +39,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val _state = MutableStateFlow(
         MainUiState(
             apiKey = configStore.apiKey,
-            geoVisionUrl = configStore.geoVisionUrl,
+            livekitUrl = configStore.livekitUrl,
             tokenUrl = configStore.tokenUrl,
         )
     )
@@ -77,7 +81,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             log("Connecting (${mode.name}) to ${token.roomName} as ${token.identity}")
             VisionBotSDKManager.connectToGeoVisionRoom(
                 context = getApplication(),
-                socketUrl = current.geoVisionUrl,
+                socketUrl = current.livekitUrl,
                 accessToken = token.accessToken,
                 roomOptions = GeoVisionRoomOptions(
                     videoTrackCaptureDefaults = LocalVideoTrackOptions(position = CameraPosition.FRONT)
@@ -179,10 +183,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     private fun saveConfig(intent: MainIntent.SaveConfig) {
-        configStore.save(intent.geoVisionUrl, intent.apiKey, intent.tokenUrl)
+        configStore.save(intent.livekitUrl, intent.apiKey, intent.tokenUrl)
         _state.update {
             it.copy(
-                geoVisionUrl = intent.geoVisionUrl,
+                livekitUrl = intent.livekitUrl,
                 apiKey = intent.apiKey,
                 tokenUrl = intent.tokenUrl,
             )
@@ -194,7 +198,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         configStore.clear()
         _state.update {
             it.copy(
-                geoVisionUrl = BuildConfig.BASE_URL,
+                livekitUrl = BuildConfig.BASE_URL,
                 apiKey = BuildConfig.API_KEY,
                 tokenUrl = BuildConfig.TOKEN_URL,
             )

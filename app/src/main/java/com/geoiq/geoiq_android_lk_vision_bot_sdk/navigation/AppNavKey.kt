@@ -3,13 +3,13 @@ package com.geoiq.geoiq_android_lk_vision_bot_sdk.navigation
 import androidx.navigation3.runtime.NavKey
 import kotlinx.serialization.Serializable
 
-sealed interface GeoVisionNavKey : NavKey
+sealed interface AppNavKey : NavKey
 
 @Serializable
-data object SdkInteraction : GeoVisionNavKey
+data object SdkInteraction : AppNavKey
 
 @Serializable
-data object Chat : GeoVisionNavKey
+data object Chat : AppNavKey
 
 @Serializable
-data object Settings : GeoVisionNavKey
+data object Settings : AppNavKey

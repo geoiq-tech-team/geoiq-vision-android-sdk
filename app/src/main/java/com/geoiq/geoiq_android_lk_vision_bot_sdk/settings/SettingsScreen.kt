@@ -1,4 +1,4 @@
-package com.geoiq.geoiq_android_lk_vision_bot_sdk.setting
+package com.geoiq.geoiq_android_lk_vision_bot_sdk.settings
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -88,12 +88,12 @@ fun SettingsScreen(
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            var urlDraft by rememberSaveable { mutableStateOf(state.geoVisionUrl) }
+            var urlDraft by rememberSaveable { mutableStateOf(state.livekitUrl) }
             var tokenUrlDraft by rememberSaveable { mutableStateOf(state.tokenUrl) }
             var keyDraft by rememberSaveable { mutableStateOf(state.apiKey) }
 
-            LaunchedEffect(state.geoVisionUrl, state.tokenUrl, state.apiKey) {
-                urlDraft = state.geoVisionUrl
+            LaunchedEffect(state.livekitUrl, state.tokenUrl, state.apiKey) {
+                urlDraft = state.livekitUrl
                 tokenUrlDraft = state.tokenUrl
                 keyDraft = state.apiKey
             }
@@ -104,7 +104,7 @@ fun SettingsScreen(
             val tokenUrlInvalid = tokenUrlDraft.isNotBlank() && !tokenUrlDraft.startsWith("https://")
             val draftValid = !urlInvalid && !tokenUrlInvalid &&
                 urlDraft.isNotBlank() && tokenUrlDraft.isNotBlank() && keyDraft.isNotBlank()
-            val isDirty = urlDraft != state.geoVisionUrl ||
+            val isDirty = urlDraft != state.livekitUrl ||
                 tokenUrlDraft != state.tokenUrl ||
                 keyDraft != state.apiKey
 
@@ -197,7 +197,7 @@ fun SettingsScreen(
                 onClick = {
                     viewModel.onIntent(
                         MainIntent.SaveConfig(
-                            geoVisionUrl = urlDraft.trim(),
+                            livekitUrl = urlDraft.trim(),
                             apiKey = keyDraft.trim(),
                             tokenUrl = tokenUrlDraft.trim(),
                         )

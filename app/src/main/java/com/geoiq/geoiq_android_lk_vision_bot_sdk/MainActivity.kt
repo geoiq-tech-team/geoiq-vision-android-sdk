@@ -7,8 +7,8 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
-import com.geoiq.geoiq_android_lk_vision_bot_sdk.navigation.GeoVisionNavHost
-import com.geoiq.geoiq_android_lk_vision_bot_sdk.ui.theme.GEOIQANDROIDLKVISIONBOTSDKTheme
+import com.geoiq.geoiq_android_lk_vision_bot_sdk.navigation.AppNavHost
+import com.geoiq.geoiq_android_lk_vision_bot_sdk.ui.theme.AppTheme
 
 class MainActivity : ComponentActivity() {
 
@@ -19,8 +19,8 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         requestMissingPermissions()
         setContent {
-            GEOIQANDROIDLKVISIONBOTSDKTheme {
-                GeoVisionNavHost()
+            AppTheme {
+                AppNavHost()
             }
         }
     }

@@ -26,7 +26,7 @@ data class MainUiState(
     val eventLog: List<String> = emptyList(),
     val chatMessages: List<ChatMessage> = emptyList(),
     val apiKey: String = BuildConfig.API_KEY,
-    val geoVisionUrl: String = BuildConfig.BASE_URL,
+    val livekitUrl: String = BuildConfig.BASE_URL,
     val tokenUrl: String = BuildConfig.TOKEN_URL,
 ) {
     val isConnected: Boolean get() = phase == ConnectionPhase.Connected
@@ -34,7 +34,7 @@ data class MainUiState(
 
     val isConfigModified: Boolean
         get() = apiKey != BuildConfig.API_KEY ||
-            geoVisionUrl != BuildConfig.BASE_URL ||
+            livekitUrl != BuildConfig.BASE_URL ||
             tokenUrl != BuildConfig.TOKEN_URL
 }
 
@@ -52,7 +52,7 @@ sealed interface MainIntent {
     data class SendFile(val uri: Uri) : MainIntent
     data class SendChatMessage(val text: String) : MainIntent
     data class SaveConfig(
-        val geoVisionUrl: String,
+        val livekitUrl: String,
         val apiKey: String,
         val tokenUrl: String,
     ) : MainIntent

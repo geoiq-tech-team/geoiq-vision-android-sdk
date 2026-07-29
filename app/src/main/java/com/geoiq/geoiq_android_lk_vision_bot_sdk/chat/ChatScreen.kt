@@ -1,4 +1,8 @@
-package com.geoiq.geoiq_android_lk_vision_bot_sdk
+package com.geoiq.geoiq_android_lk_vision_bot_sdk.chat
+
+import com.geoiq.geoiq_android_lk_vision_bot_sdk.ChatMessage
+import com.geoiq.geoiq_android_lk_vision_bot_sdk.MainIntent
+import com.geoiq.geoiq_android_lk_vision_bot_sdk.MainViewModel
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box

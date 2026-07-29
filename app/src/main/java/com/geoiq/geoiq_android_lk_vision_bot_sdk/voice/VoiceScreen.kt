@@ -1,4 +1,10 @@
-package com.geoiq.geoiq_android_lk_vision_bot_sdk
+package com.geoiq.geoiq_android_lk_vision_bot_sdk.voice
+
+import com.geoiq.geoiq_android_lk_vision_bot_sdk.ConnectionQuality
+import com.geoiq.geoiq_android_lk_vision_bot_sdk.MainEffect
+import com.geoiq.geoiq_android_lk_vision_bot_sdk.MainIntent
+import com.geoiq.geoiq_android_lk_vision_bot_sdk.MainViewModel
+import com.geoiq.geoiq_android_lk_vision_bot_sdk.VisionBotSDKManager
 
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -61,13 +67,9 @@ import livekit.org.webrtc.RendererCommon
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 
-/**
- * @author Sayak Mondal.
- */
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SDKInteractionScreen(
+fun VoiceScreen(
     onOpenSettings: () -> Unit = {},
     viewModel: MainViewModel = viewModel(),
 ) {
@@ -107,7 +109,7 @@ fun SDKInteractionScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("GeoIQ Vision SDK") },
+                title = { Text("Vision Bot") },
                 actions = {
                     IconButton(onClick = onOpenSettings) {
                         Icon(Icons.Default.Settings, contentDescription = "Settings")

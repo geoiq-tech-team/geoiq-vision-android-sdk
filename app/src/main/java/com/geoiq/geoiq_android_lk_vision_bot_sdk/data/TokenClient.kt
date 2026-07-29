@@ -1,4 +1,4 @@
-package com.geoiq.geoiq_android_lk_vision_bot_sdk
+package com.geoiq.geoiq_android_lk_vision_bot_sdk.data
 
 import android.util.Log
 import kotlinx.coroutines.Dispatchers
@@ -7,7 +7,7 @@ import org.json.JSONObject
 import java.net.URL
 import javax.net.ssl.HttpsURLConnection
 
-data class GeoVisionToken(
+data class SessionToken(
     val accessToken: String,
     val roomName: String,
     val identity: String,
@@ -17,7 +17,7 @@ object TokenClient {
 
     private const val TAG = "TokenClient"
 
-    suspend fun fetch(tokenUrl: String, apiKey: String): GeoVisionToken? = withContext(Dispatchers.IO) {
+    suspend fun fetch(tokenUrl: String, apiKey: String): SessionToken? = withContext(Dispatchers.IO) {
         var conn: HttpsURLConnection? = null
         try {
             val metadata = buildMetadata()
@@ -31,7 +31,7 @@ object TokenClient {
             val body = JSONObject().apply { put("metadata", metadata) }
             conn.outputStream.bufferedWriter().use { it.write(body.toString()) }
             val json = JSONObject(conn.inputStream.bufferedReader().use { it.readText() })
-            GeoVisionToken(
+            SessionToken(
                 accessToken = json.getString("accessToken"),
                 roomName = json.getString("room_name"),
                 identity = json.getString("identity"),
