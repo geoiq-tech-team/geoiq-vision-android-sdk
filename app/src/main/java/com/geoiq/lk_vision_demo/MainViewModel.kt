@@ -32,7 +32,6 @@ import kotlinx.coroutines.withTimeoutOrNull
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
-import kotlin.time.Duration.Companion.milliseconds
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -97,30 +96,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 roomOptions = GeoVisionRoomOptions(
                     videoTrackCaptureDefaults = LocalVideoTrackOptions(position = CameraPosition.FRONT)
                 ),
-                isLoggingEnabled = true
             )
         }
     }
 
     private fun handover(target: SessionMode) {
-        if (!_state.value.isConnected && !_state.value.isConnecting) {
-            viewModelScope.launch { _effects.emit(MainEffect.HandoverReady(target)) }
-            return
-        }
-        viewModelScope.launch {
-            log("Handover → ${target.name}: disconnecting current session")
-            VisionBotSDKManager.disconnectFromGeoVisionRoom()
-            val disconnected = withTimeoutOrNull(DISCONNECT_AWAIT_TIMEOUT_MS.milliseconds) {
-                VisionBotSDKManager.events.first { it is GeoVisionEvent.Disconnected }
-            }
-            if (disconnected == null) {
-                log("Handover: disconnect timed out, forcing cleanup")
-                VisionBotSDKManager.releaseRoomResources()
-            }
-            _effects.emit(MainEffect.HandoverReady(target))
-            log("Handover → ${target.name}: reconnecting")
-            connect(target)
-        }
+        //to do
     }
 
     private fun toggleCamera() {
@@ -146,8 +127,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             _state.update { it.copy(isFlippingCamera = true) }
             try {
                 if (VisionBotSDKManager.flipCameraPosition()) {
-                    val track =
-                        VisionBotSDKManager.getLocalParticipant()?.getOrCreateDefaultVideoTrack()
+                    val track = VisionBotSDKManager.getLocalParticipant()?.getOrCreateDefaultVideoTrack()
                     _effects.emit(
                         MainEffect.CameraFlipped(track?.options?.position == CameraPosition.FRONT)
                     )
@@ -307,12 +287,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                             _state.update {
                                 it.copy(
                                     isCameraEnabled = true,
-                                    localVideoTrack = track as? LocalVideoTrack
-                                        ?: it.localVideoTrack,
+                                    localVideoTrack = track as? LocalVideoTrack ?: it.localVideoTrack,
                                 )
                             }
                         }
-
                         "microphone" -> _state.update { it.copy(isMicrophoneEnabled = true) }
                     }
                 }
@@ -327,7 +305,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     "camera" -> _state.update {
                         it.copy(isCameraEnabled = false, localVideoTrack = null)
                     }
-
                     "microphone" -> _state.update { it.copy(isMicrophoneEnabled = false) }
                 }
             }
@@ -395,8 +372,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             it.copy(
                 phase = ConnectionPhase.Connected,
                 connectionStatus = "Connected: ${room.name ?: "Unknown Room"}",
-                connectionQuality = localParticipant?.connectionQuality
-                    ?: ConnectionQuality.UNKNOWN,
+                connectionQuality = localParticipant?.connectionQuality ?: ConnectionQuality.UNKNOWN,
                 isCameraEnabled = VisionBotSDKManager.isCameraEnabled(),
                 isMicrophoneEnabled = VisionBotSDKManager.isMicrophoneEnabled(),
                 isSpeaking = VisionBotSDKManager.getIsSpeaking(),
@@ -419,11 +395,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     private fun log(message: String) {
         _state.update {
-            it.copy(
-                eventLog = (listOf("[${timestamp()}] $message") + it.eventLog).take(
-                    MAX_EVENT_LOG_ENTRIES
-                )
-            )
+            it.copy(eventLog = (listOf("[${timestamp()}] $message") + it.eventLog).take(MAX_EVENT_LOG_ENTRIES))
         }
     }
 
