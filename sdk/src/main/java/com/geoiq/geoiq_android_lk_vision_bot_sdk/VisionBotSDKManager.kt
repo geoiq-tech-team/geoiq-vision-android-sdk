@@ -17,6 +17,7 @@ import io.livekit.android.room.participant.Participant
 import io.livekit.android.room.participant.RemoteParticipant
 import io.livekit.android.room.track.LocalVideoTrack
 import io.livekit.android.room.track.Track
+import io.livekit.android.util.LoggingLevel
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -104,7 +105,8 @@ object VisionBotSDKManager {
         context: Context,
         socketUrl: String,
         accessToken: String,
-        roomOptions: GeoVisionRoomOptions = GeoVisionRoomOptions()
+        roomOptions: GeoVisionRoomOptions = GeoVisionRoomOptions(),
+        isLoggingEnabled : Boolean = false
     ) {
         if (currentRoom?.state == Room.State.CONNECTED || currentRoom?.state == Room.State.CONNECTING) {
             _events.tryEmit(GeoVisionEvent.Error("Already connected or connecting.", null))
@@ -113,6 +115,7 @@ object VisionBotSDKManager {
 
         roomEventsJob?.cancel()
         currentRoom = LiveKit.create(appContext = context.applicationContext, options = roomOptions)
+        if (isLoggingEnabled) LiveKit.loggingLevel = LoggingLevel.VERBOSE
 
         val roomInstance = currentRoom ?: run {
             _events.tryEmit(GeoVisionEvent.Error("Failed to create Room object.", null))
