@@ -101,24 +101,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     private fun handover(target: SessionMode) {
-        if (!_state.value.isConnected && !_state.value.isConnecting) {
-            viewModelScope.launch { _effects.emit(MainEffect.HandoverReady(target)) }
-            return
-        }
-        viewModelScope.launch {
-            log("Handover → ${target.name}: disconnecting current session")
-            VisionBotSDKManager.disconnectFromGeoVisionRoom()
-            val disconnected = withTimeoutOrNull(DISCONNECT_AWAIT_TIMEOUT_MS) {
-                VisionBotSDKManager.events.first { it is GeoVisionEvent.Disconnected }
-            }
-            if (disconnected == null) {
-                log("Handover: disconnect timed out, forcing cleanup")
-                VisionBotSDKManager.releaseRoomResources()
-            }
-            _effects.emit(MainEffect.HandoverReady(target))
-            log("Handover → ${target.name}: reconnecting")
-            connect(target)
-        }
+        //to do
     }
 
     private fun toggleCamera() {
