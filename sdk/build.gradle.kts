@@ -7,7 +7,8 @@ plugins {
 group = "com.github.geoiq-tech-team"
 version = providers.exec {
     commandLine("git", "describe", "--tags", "--abbrev=0")
-}.standardOutput.asText.get().trim().removePrefix("v")
+    isIgnoreExitValue = true
+}.standardOutput.asText.get().trim().removePrefix("v").replace("/", "-").ifEmpty { "0.0.0-SNAPSHOT" }
 
 android {
     namespace = "com.geoiq.geoiq_android_lk_vision_bot_sdk"
@@ -34,8 +35,8 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.VERSION_1_8
+        targetCompatibility = JavaVersion.VERSION_1_8
     }
     publishing {
         singleVariant("release") {
@@ -46,7 +47,7 @@ android {
 
 kotlin {
     compilerOptions {
-        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11)
+        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_1_8)
     }
 }
 

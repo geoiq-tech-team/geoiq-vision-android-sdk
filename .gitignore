@@ -6,18 +6,8 @@ local.properties
 # macOS
 .DS_Store
 
-# Android Studio / IntelliJ — per-developer state
-.idea/caches/
-.idea/libraries/
-.idea/modules.xml
-.idea/workspace.xml
-.idea/navEditor.xml
-.idea/assetWizardSettings.xml
-.idea/deploymentTargetDropDown.xml
-.idea/deploymentTargetSelector.xml
-.idea/deviceManager.xml
-.idea/markdown.xml
-.idea/obfuscation-pro.xml
+# Android Studio / IntelliJ
+.idea/
 *.iml
 captures/
 
