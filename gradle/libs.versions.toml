@@ -27,7 +27,7 @@ livekitComposeComponents = "2.2.0"
 # GeoIQ Vision SDK — versions of the published artifact used by the sample app.
 # `geoiqVisionSdkSnapshot` is a JitPack branch snapshot: "<branch with / as ~>-SNAPSHOT" eg: master-SNAPSHOT
 geoiqVisionSdkRelease = "v1.0.7"
-geoiqVisionSdkSnapshot = "siva~refactor-SNAPSHOT"
+geoiqVisionSdkSnapshot = "siva~ui-config-SNAPSHOT"
 
 # Test
 junit = "4.13.2"
