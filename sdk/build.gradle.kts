@@ -4,8 +4,11 @@ plugins {
     `maven-publish`
 }
 
-group = "com.github.geoiq-tech-team" // Must match GitHub user/org name
-version = "1.0.8"
+group = "com.github.geoiq-tech-team"
+version = providers.exec {
+    commandLine("git", "describe", "--tags", "--abbrev=0")
+    isIgnoreExitValue = true
+}.standardOutput.asText.get().trim().removePrefix("v").replace("/", "-").ifEmpty { "0.0.0-SNAPSHOT" }
 
 android {
     namespace = "com.geoiq.geoiq_android_lk_vision_bot_sdk"
@@ -31,18 +34,24 @@ android {
         sourceCompatibility = JavaVersion.VERSION_1_8
         targetCompatibility = JavaVersion.VERSION_1_8
     }
-    kotlinOptions {
-        jvmTarget = "1.8"
+    publishing {
+        singleVariant("release") {
+            withSourcesJar()
+        }
+    }
+}
+
+kotlin {
+    compilerOptions {
+        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_1_8)
     }
 }
 
 dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
-    implementation(libs.android.material)
 
-    // api() — LiveKit types appear in this SDK's public signatures (see GeoVisionEvent),
-    // so they must be on every consumer's compile classpath. Part of the public contract.
+    // api(), not implementation(): LiveKit types appear in this SDK's public signatures.
     api(libs.livekit.android)
     api(libs.livekit.android.compose.components)
 
@@ -59,7 +68,7 @@ afterEvaluate {
 
                 groupId = "com.github.geoiq-tech-team"
                 artifactId = "geoiq-vision-android-sdk"
-                version = "1.0.8"
+                version = project.version.toString()
 
                 pom {
                     name.set("GeoIQ Vision")

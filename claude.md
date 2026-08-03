@@ -4,7 +4,7 @@
 
 This repo is a LiveKit-based Android SDK + sample app for real-time audio/video communication with an AI Vision Bot.
 
-- **SDK module:** `GEOIQ-ANDROID-LK-VISION-BOT-SDK/`
+- **SDK module:** `sdk/`
 - **Sample app:** `app/`
 - **Distributed via:** JitPack (`com.github.geoiq-tech-team:geoiq-vision-android-sdk:TAG`)
 - **Active branch:** `siva/refactor`

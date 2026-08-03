@@ -1,4 +1,10 @@
-package com.geoiq.geoiq_android_lk_vision_bot_sdk
+package com.geoiq.lk_vision_demo.voice
+
+import com.geoiq.geoiq_android_lk_vision_bot_sdk.ConnectionQuality
+import com.geoiq.lk_vision_demo.MainEffect
+import com.geoiq.lk_vision_demo.MainIntent
+import com.geoiq.lk_vision_demo.MainViewModel
+import com.geoiq.geoiq_android_lk_vision_bot_sdk.VisionBotSDKManager
 
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -8,6 +14,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -24,15 +31,15 @@ import androidx.compose.material.icons.filled.AttachFile
 import androidx.compose.material.icons.filled.FlipCameraAndroid
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.MicOff
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Videocam
 import androidx.compose.material.icons.filled.VideocamOff
-import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
@@ -40,7 +47,9 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
@@ -52,47 +61,71 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import io.livekit.android.renderer.SurfaceViewRenderer
 import livekit.org.webrtc.RendererCommon
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.ButtonDefaults
-
-/**
- * @author Sayak Mondal.
- */
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SDKInteractionScreen(viewModel: MainViewModel = viewModel()) {
+fun VoiceScreen(
+    onOpenSettings: () -> Unit = {},
+    viewModel: MainViewModel = viewModel(),
+) {
+    val state by viewModel.state.collectAsStateWithLifecycle()
     val rendererRef = remember { mutableStateOf<SurfaceViewRenderer?>(null) }
 
-    // Side effect: attach the local video track whenever it changes
-    val localVideoTrack = viewModel.localVideoTrack
-    LaunchedEffect(localVideoTrack, rendererRef.value) {
-        val renderer = rendererRef.value ?: return@LaunchedEffect
-        if (localVideoTrack != null) {
+    LaunchedEffect(Unit) {
+        viewModel.effects.collect { effect ->
+            when (effect) {
+                is MainEffect.CameraFlipped -> rendererRef.value?.setMirror(!effect.isFrontCamera)
+                is MainEffect.HandoverReady -> {}
+            }
+        }
+    }
+
+    // Dual-key: a replaced renderer must re-attach even when the track is unchanged.
+    // onDispose must remove the renderer before AndroidView releases it, or LiveKit keeps
+    // pushing frames into a released EGL surface once this screen leaves the NavDisplay.
+    val localVideoTrack = state.localVideoTrack
+    DisposableEffect(localVideoTrack, rendererRef.value) {
+        val renderer = rendererRef.value
+        if (renderer != null && localVideoTrack != null) {
             VisionBotSDKManager.initializeVideoRenderer(renderer)
             localVideoTrack.addRenderer(renderer)
+        }
+        onDispose {
+            if (renderer != null && localVideoTrack != null) {
+                localVideoTrack.removeRenderer(renderer)
+            }
         }
     }
 
     val pickFileLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
-        if (uri != null && viewModel.isConnected) viewModel.sendFile(uri)
+        if (uri != null && state.isConnected) viewModel.onIntent(MainIntent.SendFile(uri))
     }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("GeoIQ Vision SDK") },
+                title = { Text("Vision Bot") },
+                actions = {
+                    IconButton(onClick = onOpenSettings) {
+                        Icon(Icons.Default.Settings, contentDescription = "Settings")
+                    }
+                },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                    titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                    actionIconContentColor = MaterialTheme.colorScheme.onPrimaryContainer
                 )
             )
-        }
+        },
+        // The host Scaffold's bottom bar already covers the navigation bar area; applying system
+        // bar insets again here would leave dead space below the event log.
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
     ) { padding ->
         Column(
             modifier = Modifier
@@ -104,43 +137,32 @@ fun SDKInteractionScreen(viewModel: MainViewModel = viewModel()) {
         ) {
             Spacer(Modifier.height(4.dp))
 
-            key(viewModel.rendererSession) {
-                VideoPreviewCard(rendererRef, viewModel.isCameraEnabled)
+            key(state.rendererSession) {
+                VideoPreviewCard(rendererRef, state.isCameraEnabled)
             }
 
             StatusCard(
-                status = viewModel.connectionStatus,
-                isConnected = viewModel.isConnected,
-                isConnecting = viewModel.isConnecting,
-                quality = viewModel.connectionQuality,
-                isSpeaking = viewModel.isSpeaking,
-                agentState = viewModel.agentState
-            )
-
-            ConnectionControls(
-                isConnecting = viewModel.isConnecting,
-                isConnected = viewModel.isConnected,
-                onConnect = { viewModel.connect() },
-                onDisconnect = { viewModel.disconnect() }
+                status = state.connectionStatus,
+                isConnected = state.isConnected,
+                isConnecting = state.isConnecting,
+                quality = state.connectionQuality,
+                isSpeaking = state.isSpeaking,
+                agentState = state.agentState
             )
 
             MediaControls(
-                enabled = viewModel.isConnected,
-                isCameraEnabled = viewModel.isCameraEnabled,
-                isMicrophoneEnabled = viewModel.isMicrophoneEnabled,
-                isFlipping = viewModel.isFlippingCamera,
-                onToggleCamera = { viewModel.toggleCamera() },
-                onToggleMicrophone = { viewModel.toggleMicrophone() },
-                onFlipCamera = {
-                    viewModel.flipCamera { isFront ->
-                        rendererRef.value?.setMirror(!isFront)
-                    }
-                }
+                enabled = state.isConnected,
+                isCameraEnabled = state.isCameraEnabled,
+                isMicrophoneEnabled = state.isMicrophoneEnabled,
+                isFlipping = state.isFlippingCamera,
+                onToggleCamera = { viewModel.onIntent(MainIntent.ToggleCamera) },
+                onToggleMicrophone = { viewModel.onIntent(MainIntent.ToggleMicrophone) },
+                onFlipCamera = { viewModel.onIntent(MainIntent.FlipCamera) }
             )
 
             OutlinedButton(
                 onClick = { pickFileLauncher.launch("image/*") },
-                enabled = viewModel.isConnected,
+                enabled = state.isConnected,
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Icon(Icons.Default.AttachFile, contentDescription = null)
@@ -148,7 +170,7 @@ fun SDKInteractionScreen(viewModel: MainViewModel = viewModel()) {
                 Text("Send Image")
             }
 
-            EventLogCard(events = viewModel.eventLog)
+            EventLogCard(events = state.eventLog)
 
             Spacer(Modifier.height(8.dp))
         }
@@ -263,49 +285,6 @@ private fun StatusCard(
                     )
                 }
             }
-        }
-    }
-}
-
-@Composable
-private fun ConnectionControls(
-    isConnecting: Boolean,
-    isConnected: Boolean,
-    onConnect: () -> Unit,
-    onDisconnect: () -> Unit
-) {
-    val canDisconnect = isConnected || isConnecting
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        Button(
-            onClick = onConnect,
-            enabled = !isConnecting && !isConnected,
-            modifier = Modifier.weight(1f),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = Color(0xFF2E7D32),
-                contentColor = Color.White
-            )
-        ) {
-            if (isConnecting) {
-                CircularProgressIndicator(
-                    modifier = Modifier.size(16.dp),
-                    strokeWidth = 2.dp,
-                    color = Color.White
-                )
-                Spacer(Modifier.width(8.dp))
-            }
-            Text(if (isConnecting) "Connecting..." else "Connect")
-        }
-        OutlinedButton(
-            onClick = onDisconnect,
-            enabled = canDisconnect,
-            modifier = Modifier.weight(1f),
-            colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFFC62828)),
-            border = BorderStroke(1.dp, if (canDisconnect) Color(0xFFC62828) else MaterialTheme.colorScheme.outline.copy(alpha = 0.38f))
-        ) {
-            Text("Disconnect")
         }
     }
 }

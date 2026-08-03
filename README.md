@@ -251,7 +251,7 @@ The `app/` module is a self-contained Jetpack Compose app demonstrating the full
 ## Repo Structure
 
 ```
-GEOIQ-ANDROID-LK-VISION-BOT-SDK/       # SDK module
+sdk/                                    # SDK module
 └── VisionBotSDKManager.kt              # Singleton SDK entry point
 └── GeoVisionEvent.kt                   # Sealed event hierarchy
 └── GeoVisionTypeAliases.kt             # Re-exported LiveKit type aliases (so that extra dependency is not required)
