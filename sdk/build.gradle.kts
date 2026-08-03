@@ -32,7 +32,14 @@ android {
 
     buildTypes {
         release {
-            isMinifyEnabled = true
+            // Must stay false: R8 on a *library* shrinks its own published API. It dropped
+            // GeoVisionTypeAliasesKt as unreferenced (nothing inside the SDK uses the aliases —
+            // they exist for consumers) and stripped META-INF/*.kotlin_module, the only place
+            // top-level typealiases are recorded. Consumers then fail to compile with
+            // "Unresolved reference 'LocalVideoTrack'". No keep rule can restore the
+            // .kotlin_module resource. The consuming app minifies instead, guided by
+            // consumerProguardFiles above.
+            isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -41,6 +48,7 @@ android {
         create("benchmark") {
             initWith(getByName("release"))
             matchingFallbacks += listOf("release")
+            isMinifyEnabled = true
         }
     }
     compileOptions {
