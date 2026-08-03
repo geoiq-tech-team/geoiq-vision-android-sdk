@@ -5,7 +5,16 @@ plugins {
 }
 
 group = "com.github.geoiq-tech-team"
-version = providers.exec {
+
+// JitPack builds with `-Pversion=<the coordinate it resolved>`. Honour that: the version in the
+// published POM must equal the coordinate consumers request, or Gradle rejects the module with
+// "inconsistent module metadata found ... bad version". Overwriting it unconditionally also meant
+// JitPack's shallow clone (no tags) fell through to 0.0.0-SNAPSHOT for every branch build.
+// The git-describe fallback is for publishing locally, where no version is passed in.
+val injectedVersion = (findProperty("version") as? String)
+    ?.takeIf { it.isNotBlank() && it != Project.DEFAULT_VERSION }
+
+version = injectedVersion ?: providers.exec {
     commandLine("git", "describe", "--tags", "--abbrev=0")
     isIgnoreExitValue = true
 }.standardOutput.asText.get().trim().removePrefix("v").replace("/", "-").ifEmpty { "0.0.0-SNAPSHOT" }

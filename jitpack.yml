@@ -1,0 +1,10 @@
+# AGP 8.11 requires JDK 17. Without this JitPack starts on JDK 8, warns, and re-execs.
+jdk:
+  - openjdk17
+
+# Only :sdk is published. JitPack's default command runs `assemble` at the root, which also
+# builds :app and :benchmark — and :app resolves the SDK from JitPack itself
+# (SdkVariant.SNAPSHOT), so a hiccup fetching that artifact fails the whole publish.
+# $VERSION is the coordinate JitPack resolved for this build; :sdk stamps it onto the POM.
+install:
+  - ./gradlew :sdk:publishToMavenLocal -Pversion=$VERSION -xtest -xlint --console=plain

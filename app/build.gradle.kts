@@ -117,7 +117,10 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.test.manifest)
 
     val sdkModule = "com.github.geoiq-tech-team:geoiq-vision-android-sdk"
-    val sdkVariant = SdkVariant.SNAPSHOT
+    // DEBUG builds the demo against the local :sdk source. Switch to SNAPSHOT/RELEASE only to
+    // verify a published artifact — on a feature branch SNAPSHOT pulls whatever branch
+    // geoiqVisionSdkSnapshot names, which is not the code in this working tree.
+    val sdkVariant = SdkVariant.DEBUG
     when (sdkVariant) {
         SdkVariant.RELEASE -> {
             implementation("$sdkModule:${libs.versions.geoiqVisionSdkRelease.get()}")
