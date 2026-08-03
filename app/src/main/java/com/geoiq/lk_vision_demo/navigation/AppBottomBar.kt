@@ -18,7 +18,7 @@ private data class BottomBarDestination(
 
 private val BottomBarDestinations = listOf(
     BottomBarDestination(SdkInteraction, "Session", Icons.Filled.Videocam),
-//    BottomBarDestination(Chat, "Chat", Icons.AutoMirrored.Filled.Chat),
+    BottomBarDestination(Chat, "Chat", Icons.AutoMirrored.Filled.Chat),
 )
 
 internal fun AppNavKey?.isTopLevel(): Boolean =

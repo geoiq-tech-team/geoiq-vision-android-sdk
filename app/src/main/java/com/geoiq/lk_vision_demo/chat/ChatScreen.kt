@@ -3,15 +3,17 @@ package com.geoiq.lk_vision_demo.chat
 import com.geoiq.lk_vision_demo.ChatMessage
 import com.geoiq.lk_vision_demo.MainIntent
 import com.geoiq.lk_vision_demo.MainViewModel
+import com.geoiq.lk_vision_demo.SessionMode
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -21,13 +23,17 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
+import androidx.compose.material.icons.filled.Call
+import androidx.compose.material.icons.filled.CallEnd
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -68,6 +74,37 @@ fun ChatScreen(
             TopAppBar(
                 title = { Text("Chat") },
                 actions = {
+                    // The session control lives here rather than in a FAB, which would sit on
+                    // top of the composer's send button.
+                    val canDisconnect = state.hasActiveSession
+                    IconButton(
+                        onClick = {
+                            viewModel.onIntent(
+                                if (canDisconnect) {
+                                    MainIntent.Disconnect
+                                } else {
+                                    MainIntent.Connect(SessionMode.Chat)
+                                }
+                            )
+                        }
+                    ) {
+                        if (state.isConnecting || state.isReconnecting) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(20.dp),
+                                strokeWidth = 2.dp,
+                                color = LocalContentColor.current,
+                            )
+                        } else {
+                            Icon(
+                                imageVector = if (canDisconnect) {
+                                    Icons.Default.CallEnd
+                                } else {
+                                    Icons.Default.Call
+                                },
+                                contentDescription = if (canDisconnect) "Disconnect" else "Connect",
+                            )
+                        }
+                    }
                     IconButton(onClick = onOpenSettings) {
                         Icon(Icons.Default.Settings, contentDescription = "Settings")
                     }
@@ -78,13 +115,15 @@ fun ChatScreen(
                     actionIconContentColor = MaterialTheme.colorScheme.onPrimaryContainer
                 )
             )
-        }
+        },
+        // The host Scaffold already applies the bottom-bar and IME insets; re-applying system
+        // bars here would add a second gap under the composer.
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
     ) { padding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .imePadding()
         ) {
             if (messages.isEmpty()) {
                 Box(
@@ -98,7 +137,7 @@ fun ChatScreen(
                         text = if (state.isConnected) {
                             "No messages yet. Transcriptions and data-channel messages appear here."
                         } else {
-                            "Not connected. Start a session from the Session tab."
+                            "Not connected. Tap Connect or switch to the Session tab to start."
                         },
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,

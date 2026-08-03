@@ -2,6 +2,8 @@ package com.geoiq.lk_vision_demo.navigation
 
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.ime
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -18,6 +20,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -43,6 +46,14 @@ fun AppNavHost(
     val current = backStack.lastOrNull() as? AppNavKey
     val state by viewModel.state.collectAsStateWithLifecycle()
 
+    val isImeVisible = WindowInsets.ime.getBottom(LocalDensity.current) > 0
+    // Give the keyboard the full bottom area: the tab bar would otherwise sit on top of it, and
+    // keeping it would mean subtracting its height from the IME inset to avoid double padding.
+    val showBottomBar = current.isTopLevel() && !isImeVisible
+    // Chat owns its bottom edge with the composer, so a floating button there would cover the
+    // send action. That screen exposes connect/disconnect in its top bar instead.
+    val showSessionFab = current.isTopLevel() && current != Chat && !isImeVisible
+
     val openSettings = { if (backStack.lastOrNull() != Settings) backStack.add(Settings) }
     val goBack = { backStack.removeLastOrNull(); Unit }
 
@@ -61,7 +72,7 @@ fun AppNavHost(
     Scaffold(
         modifier = modifier,
         bottomBar = {
-            if (current.isTopLevel()) {
+            if (showBottomBar) {
                 AppBottomBar(
                     current = current,
                     onSelect = { key ->
@@ -71,7 +82,9 @@ fun AppNavHost(
                             is SdkInteraction -> SessionMode.Video
                             else -> return@AppBottomBar
                         }
-                        if (state.isConnected || state.isConnecting) {
+                        if (state.hasActiveSession) {
+                            // Hand the session over to the other agent; the tab switches when
+                            // the ViewModel emits HandoverReady.
                             viewModel.onIntent(MainIntent.Handover(target))
                         } else {
                             backStack.switchTopLevelTo(key)
@@ -81,8 +94,8 @@ fun AppNavHost(
             }
         },
         floatingActionButton = {
-            if (current.isTopLevel()) {
-                val canDisconnect = state.isConnected || state.isConnecting
+            if (showSessionFab) {
+                val canDisconnect = state.hasActiveSession
                 ExtendedFloatingActionButton(
                     onClick = {
                         if (canDisconnect) {
@@ -106,13 +119,13 @@ fun AppNavHost(
                         MaterialTheme.colorScheme.onPrimaryContainer
                     },
                 ) {
-                    if (state.isConnecting) {
+                    if (state.isConnecting || state.isReconnecting) {
                         CircularProgressIndicator(
                             modifier = Modifier.size(18.dp),
                             strokeWidth = 2.dp,
                         )
                         Spacer(Modifier.width(8.dp))
-                        Text("Connecting...")
+                        Text(if (state.isReconnecting) "Reconnecting..." else "Connecting...")
                     } else if (state.isConnected) {
                         Icon(Icons.Default.CallEnd, contentDescription = null)
                         Spacer(Modifier.width(8.dp))
@@ -129,7 +142,11 @@ fun AppNavHost(
     ) { innerPadding ->
         NavDisplay(
             backStack = backStack,
-            modifier = Modifier.padding(bottom = innerPadding.calculateBottomPadding()),
+            // Exactly one of these is ever non-zero: the bottom bar is hidden while the keyboard
+            // is up, so the two cannot stack into a double gap above the composer.
+            modifier = Modifier
+                .padding(bottom = innerPadding.calculateBottomPadding())
+                .imePadding(),
             onBack = { backStack.removeLastOrNull() },
             entryProvider = entryProvider {
                 entry<SdkInteraction> { VoiceScreen(onOpenSettings = openSettings) }
