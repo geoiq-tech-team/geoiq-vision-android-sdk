@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -8,6 +10,14 @@ plugins {
 enum class SdkVariant {
     RELEASE, SNAPSHOT, DEBUG
 }
+
+// Production API keys live in local.properties (gitignored) — this repository is public.
+val localProperties = Properties().apply {
+    val file = rootProject.file("local.properties")
+    if (file.exists()) file.inputStream().use { load(it) }
+}
+
+fun localSecret(key: String): String = localProperties.getProperty(key).orEmpty().trim()
 
 android {
     namespace = "com.geoiq.lk_vision_demo"
@@ -24,6 +34,21 @@ android {
         vectorDrawables {
             useSupportLibrary = true
         }
+
+        // Voice and chat run on separate deployments with separate keys. Socket URLs are not
+        // secret and live in GeoEnv; only the production keys come from local.properties:
+        //   geoiq.voice.prod.apiKey=...
+        //   geoiq.chat.prod.apiKey=...
+        buildConfigField(
+            "String",
+            "GEO_VOICE_PROD_API_KEY",
+            "\"${localSecret("geoiq.voice.prod.apiKey")}\""
+        )
+        buildConfigField(
+            "String",
+            "GEO_CHAT_PROD_API_KEY",
+            "\"${localSecret("geoiq.chat.prod.apiKey")}\""
+        )
     }
 
     buildTypes {
@@ -34,43 +59,9 @@ android {
                 "proguard-rules.pro"
             )
             signingConfig = signingConfigs.getByName("debug")
-            buildConfigField(
-                "String",
-                "BASE_URL",
-                "\"wss://lk-stg2.diq.geoiq.ai/\""
-            )
-
-            buildConfigField(
-                "String",
-                "API_KEY",
-                "\"eyshaG9sbGVzX2Fwa1DopV9rCV12FwaV9rZXk6cassmmjas\""
-            )
-
-            buildConfigField(
-                "String",
-                "TOKEN_URL",
-                "\"https://lk-va-token.diq.geoiq.ai/stg/v1/token\""
-            )
         }
 
         debug {
-            buildConfigField(
-                "String",
-                "BASE_URL",
-                "\"wss://lk-stg2.diq.geoiq.ai/\""
-            )
-
-            buildConfigField(
-                "String",
-                "API_KEY",
-                "\"eyshaG9sbGVzX2Fwa1DopV9rCV12FwaV9rZXk6cassmmjas\""
-            )
-
-            buildConfigField(
-                "String",
-                "TOKEN_URL",
-                "\"https://lk-va-token.diq.geoiq.ai/stg/v1/token\""
-            )
         }
 
         create("benchmark") {

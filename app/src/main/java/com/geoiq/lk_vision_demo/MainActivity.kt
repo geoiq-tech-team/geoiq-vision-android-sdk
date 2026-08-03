@@ -7,6 +7,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
+import androidx.core.view.WindowCompat
 import com.geoiq.geoiq_android_lk_vision_bot_sdk.VisionBotSDKManager
 import com.geoiq.lk_vision_demo.navigation.AppNavHost
 import com.geoiq.lk_vision_demo.ui.theme.AppTheme
@@ -18,6 +19,10 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // Required for WindowInsets.ime to reach Compose. With the default (decor fits system
+        // windows) the framework resizes the window instead and reports a zero IME inset, which
+        // makes Modifier.imePadding() a silent no-op.
+        WindowCompat.setDecorFitsSystemWindows(window, false)
         requestMissingPermissions()
         setContent {
             AppTheme {
