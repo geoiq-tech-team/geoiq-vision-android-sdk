@@ -18,6 +18,7 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "GEOIQ-ANDROID-LK-VISION-BOT-SDK"
+rootProject.name = "geoiq-vision-android-sdk"
 include(":app")
-include(":GEOIQ-ANDROID-LK-VISION-BOT-SDK")
+include(":sdk")
+include(":benchmark")

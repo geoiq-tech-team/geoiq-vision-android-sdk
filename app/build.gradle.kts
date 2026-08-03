@@ -1,18 +1,30 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
+    alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.kotlin.serialization)
 }
 
 enum class SdkVariant {
     RELEASE, SNAPSHOT, DEBUG
 }
 
+// Production API keys live in local.properties (gitignored) — this repository is public.
+val localProperties = Properties().apply {
+    val file = rootProject.file("local.properties")
+    if (file.exists()) file.inputStream().use { load(it) }
+}
+
+fun localSecret(key: String): String = localProperties.getProperty(key).orEmpty().trim()
+
 android {
-    namespace = "com.geoiq.geoiq_android_lk_vision_bot_sdk"
+    namespace = "com.geoiq.lk_vision_demo"
     compileSdk = libs.versions.compileSdk.get().toInt()
 
     defaultConfig {
-        applicationId = "com.geoiq.geoiq_android_lk_vision_bot_sdk"
+        applicationId = "com.geoiq.lk_vision_demo"
         minSdk = libs.versions.minSdk.get().toInt()
         targetSdk = libs.versions.targetSdk.get().toInt()
         versionCode = 1
@@ -22,6 +34,21 @@ android {
         vectorDrawables {
             useSupportLibrary = true
         }
+
+        // Voice and chat run on separate deployments with separate keys. Socket URLs are not
+        // secret and live in GeoEnv; only the production keys come from local.properties:
+        //   geoiq.voice.prod.apiKey=...
+        //   geoiq.chat.prod.apiKey=...
+        buildConfigField(
+            "String",
+            "GEO_VOICE_PROD_API_KEY",
+            "\"${localSecret("geoiq.voice.prod.apiKey")}\""
+        )
+        buildConfigField(
+            "String",
+            "GEO_CHAT_PROD_API_KEY",
+            "\"${localSecret("geoiq.chat.prod.apiKey")}\""
+        )
     }
 
     buildTypes {
@@ -32,45 +59,23 @@ android {
                 "proguard-rules.pro"
             )
             signingConfig = signingConfigs.getByName("debug")
-            buildConfigField(
-                "String",
-                "BASE_URL",
-                "\"wss://lk-stg2.diq.geoiq.ai/\""
-            )
-
-            buildConfigField(
-                "String",
-                "API_KEY",
-                "\"eyshaG9sbGVzX2Fwa1DopV9rCV12FwaV9rZXk6cassmmjas\""
-            )
         }
 
         debug {
-            buildConfigField(
-                "String",
-                "BASE_URL",
-                "\"wss://lk-stg2.diq.geoiq.ai/\""
-            )
+        }
 
-            buildConfigField(
-                "String",
-                "API_KEY",
-                "\"eyshaG9sbGVzX2Fwa1DopV9rCV12FwaV9rZXk6cassmmjas\""
-            )
+        create("benchmark") {
+            initWith(getByName("release"))
+            matchingFallbacks += listOf("release")
+            isDebuggable = false
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_1_8
-        targetCompatibility = JavaVersion.VERSION_1_8
+        sourceCompatibility = JavaVersion.VERSION_11
+        targetCompatibility = JavaVersion.VERSION_11
     }
     kotlinOptions {
-        jvmTarget = "1.8"
-    }
-    buildFeatures {
-        compose = true
-    }
-    composeOptions {
-        kotlinCompilerExtensionVersion = libs.versions.composeCompiler.get()
+        jvmTarget = "11"
     }
     packaging {
         resources {
@@ -78,15 +83,18 @@ android {
         }
     }
     buildFeatures {
+        compose = true
         buildConfig = true
     }
 }
 
 dependencies {
 
+    implementation(libs.androidx.profileinstaller)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
+    implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.androidx.activity.compose)
 
     implementation(platform(libs.androidx.compose.bom))
@@ -95,6 +103,10 @@ dependencies {
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.compose.material3)
     implementation(libs.androidx.compose.material.icons.extended)
+
+    implementation(libs.androidx.navigation3.runtime)
+    implementation(libs.androidx.navigation3.ui)
+    implementation(libs.kotlinx.serialization.core)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.test.ext.junit)
@@ -105,7 +117,10 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.test.manifest)
 
     val sdkModule = "com.github.geoiq-tech-team:geoiq-vision-android-sdk"
-    val sdkVariant = SdkVariant.SNAPSHOT
+    // DEBUG builds the demo against the local :sdk source. Switch to SNAPSHOT/RELEASE only to
+    // verify a published artifact — on a feature branch SNAPSHOT pulls whatever branch
+    // geoiqVisionSdkSnapshot names, which is not the code in this working tree.
+    val sdkVariant = SdkVariant.DEBUG
     when (sdkVariant) {
         SdkVariant.RELEASE -> {
             implementation("$sdkModule:${libs.versions.geoiqVisionSdkRelease.get()}")
@@ -116,7 +131,7 @@ dependencies {
         }
 
         SdkVariant.DEBUG -> {
-            implementation(project(":GEOIQ-ANDROID-LK-VISION-BOT-SDK"))
+            implementation(project(":sdk"))
         }
     }
 }
