@@ -1,4 +1,5 @@
-# JitPack defaults to JDK 8. Gradle 9.6 / AGP 9.4 need JDK 17+, and
-# gradle/gradle-daemon-jvm.properties pins the daemon to JDK 21.
+# JitPack defaults to JDK 8. Gradle 9.6 / AGP 9.4 need JDK 17+ to launch;
+# the daemon then provisions the JDK pinned in gradle/gradle-daemon-jvm.properties.
+# (JitPack's `openjdk21` alias currently fails to download — keep 17 here.)
 jdk:
-  - openjdk21
+  - openjdk17
