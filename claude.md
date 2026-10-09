@@ -56,6 +56,19 @@ encapsulation and the set was incomplete, so consumers imported `io.livekit.*` a
   must switch to `io.livekit…`. Lenskart imported `DataPublishReliability` and
   `LocalVideoTrack` this way (as of SDK `v1.2.6`).
 
+### SDK must stay consumable from older toolchains
+
+Lenskart (the main consumer) is on AGP 8.13 / compileSdk 36 / Kotlin 2.3. AGP 9 makes a
+library's AAR demand `compileSdk >= its own`, and AndroidX releases do the same.
+
+- `aarMetadata { minCompileSdk = 35 }` in the SDK — don't remove it, or every consumer
+  is forced onto the SDK's compileSdk (37).
+- The SDK declares only `api(livekit-android)` and `api(kotlinx-coroutines-android)`.
+  **Don't add AndroidX/Material deps** (core-ktx, appcompat, …) unless SDK code uses them:
+  bleeding-edge versions propagate to consumers (core-ktx 1.19 needs compileSdk 37 + AGP 9.1).
+- Before releasing, run `./gradlew :app:checkProductionDebugAarMetadata` in Lenskart
+  against the JitPack snapshot.
+
 ### Renderer registry
 `VisionBotSDKManager` uses a `WeakHashMap`-backed registry to track renderers — prevents leaks across sessions.
 
