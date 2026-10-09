@@ -15,6 +15,12 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles("consumer-rules.pro")
+
+        // AGP 9 defaults this to our compileSdk, forcing every consumer onto it.
+        // The SDK uses no newer APIs; 35 is the floor set by androidx.core 1.16 (via LiveKit).
+        aarMetadata {
+            minCompileSdk = 35
+        }
     }
 
     buildTypes {
@@ -37,13 +43,14 @@ android {
 }
 
 dependencies {
-    implementation(libs.androidx.core.ktx)
-    implementation(libs.androidx.appcompat)
-    implementation(libs.android.material)
+    // No AndroidX/Material deps of our own: the SDK uses none of them, and pinning newer
+    // versions here forces consumers onto a newer compileSdk/AGP. LiveKit brings what it needs.
 
     // api() — LiveKit types appear in this SDK's public signatures (see GeoVisionEvent),
     // so they must be on every consumer's compile classpath. Part of the public contract.
     api(libs.livekit.android)
+    // api() — `VisionBotSDKManager.events` is a SharedFlow.
+    api(libs.kotlinx.coroutines.android)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.test.ext.junit)
