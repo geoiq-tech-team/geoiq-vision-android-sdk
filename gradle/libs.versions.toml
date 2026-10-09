@@ -1,24 +1,22 @@
 [versions]
 # Build tooling
-agp = "8.11.1"
-kotlin = "1.9.0"
-composeCompiler = "1.5.1"
+agp = "9.4.1"
+kotlin = "2.4.21"
 
 # Android SDK levels — both modules must agree
-compileSdk = "34"
+compileSdk = "37"
 minSdk = "23"
 targetSdk = "34"
 
 # AndroidX / Google
-coreKtx = "1.12.0"
-appcompat = "1.6.1"
-material = "1.11.0"
-lifecycle = "2.7.0"
-activityCompose = "1.8.2"
-composeBom = "2023.08.00"
+coreKtx = "1.19.1"
+appcompat = "1.8.0"
+material = "1.14.0"
+lifecycle = "2.11.0"
+activityCompose = "1.13.0"
+composeBom = "2026.09.00"
 
-livekit = "2.23.5"
-livekitComposeComponents = "2.2.0"
+livekit = "2.29.0"
 
 # GeoIQ Vision SDK — versions of the published artifact used by the sample app.
 # `geoiqVisionSdkSnapshot` is a JitPack branch snapshot: "<branch with / as ~>-SNAPSHOT" eg: master-SNAPSHOT
@@ -27,8 +25,8 @@ geoiqVisionSdkSnapshot = "siva~refactor-SNAPSHOT"
 
 # Test
 junit = "4.13.2"
-junitExt = "1.1.5"
-espresso = "3.5.1"
+junitExt = "1.3.0"
+espresso = "3.7.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -51,7 +49,6 @@ androidx-compose-material3 = { group = "androidx.compose.material3", name = "mat
 androidx-compose-material-icons-extended = { group = "androidx.compose.material", name = "material-icons-extended" }
 
 livekit-android = { group = "io.livekit", name = "livekit-android", version.ref = "livekit" }
-livekit-android-compose-components = { group = "io.livekit", name = "livekit-android-compose-components", version.ref = "livekitComposeComponents" }
 
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-test-ext-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitExt" }
@@ -60,4 +57,4 @@ androidx-test-espresso-core = { group = "androidx.test.espresso", name = "espres
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
 android-library = { id = "com.android.library", version.ref = "agp" }
-kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }

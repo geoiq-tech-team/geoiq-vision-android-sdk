@@ -76,11 +76,11 @@ dependencies {
 
 ```kotlin
 import com.geoiq.geoiq_android_lk_vision_bot_sdk.VisionBotSDKManager
-import com.geoiq.geoiq_android_lk_vision_bot_sdk.GeoVisionRoomOptions
-import com.geoiq.geoiq_android_lk_vision_bot_sdk.LocalVideoTrackOptions
-import com.geoiq.geoiq_android_lk_vision_bot_sdk.CameraPosition
+import io.livekit.android.RoomOptions
+import io.livekit.android.room.track.LocalVideoTrackOptions
+import io.livekit.android.room.track.CameraPosition
 
-val options = GeoVisionRoomOptions(
+val options = RoomOptions(
     videoTrackCaptureDefaults = LocalVideoTrackOptions(position = CameraPosition.FRONT)
 )
 
@@ -88,7 +88,7 @@ VisionBotSDKManager.connectToGeoVisionRoom(
     context = applicationContext,
     socketUrl = "wss://your-...-server",
     accessToken = "your-jwt-token",
-    roomOptions = options         // optional, defaults to GeoVisionRoomOptions()
+    roomOptions = options         // optional, defaults to RoomOptions()
 )
 ```
 
@@ -254,7 +254,6 @@ The `app/` module is a self-contained Jetpack Compose app demonstrating the full
 GEOIQ-ANDROID-LK-VISION-BOT-SDK/       # SDK module
 └── VisionBotSDKManager.kt              # Singleton SDK entry point
 └── GeoVisionEvent.kt                   # Sealed event hierarchy
-└── GeoVisionTypeAliases.kt             # Re-exported LiveKit type aliases (so that extra dependency is not required)
 
 app/                                    # Sample Jetpack Compose app
 └── MainActivity.kt                     # Entry point, permission handling

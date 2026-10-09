@@ -19,7 +19,7 @@
         android:theme="@style/Theme.GEOIQANDROIDLKVISIONBOTSDK"
         tools:targetApi="31">
         <activity
-            android:name=".MainActivity"
+            android:name="com.geoiq.geoiq_android_lk_vision_bot_sdk.MainActivity"
             android:exported="true"
             android:label="@string/app_name"
             android:theme="@style/Theme.GEOIQANDROIDLKVISIONBOTSDK">

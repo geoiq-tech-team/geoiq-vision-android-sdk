@@ -5,6 +5,7 @@ import android.content.Context
 import android.net.Uri
 import android.provider.OpenableColumns
 import android.util.Log
+import com.geoiq.geoiq_android_lk_vision_bot_sdk.sample.BuildConfig
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
@@ -12,6 +13,14 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import io.livekit.android.RoomOptions
+import io.livekit.android.room.Room
+import io.livekit.android.room.participant.ConnectionQuality
+import io.livekit.android.room.participant.LocalParticipant
+import io.livekit.android.room.track.CameraPosition
+import io.livekit.android.room.track.DataPublishReliability
+import io.livekit.android.room.track.LocalVideoTrack
+import io.livekit.android.room.track.LocalVideoTrackOptions
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -180,7 +189,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             if (result != null) {
                 val (token, roomName, identity) = result
                 log("Connecting to $roomName as $identity")
-                val options = GeoVisionRoomOptions(
+                val options = RoomOptions(
                     videoTrackCaptureDefaults = LocalVideoTrackOptions(position = CameraPosition.FRONT)
                 )
                 VisionBotSDKManager.connectToGeoVisionRoom(getApplication(), geoVisionUrl, token, options)
@@ -248,7 +257,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     private fun syncConnectionStateOnInit() {
         val room = VisionBotSDKManager.currentRoom ?: return
-        if (room.state == GeoVisionRoomState.CONNECTED) {
+        if (room.state == Room.State.CONNECTED) {
             isConnected = true
             connectionStatus = "Connected: ${room.name ?: "Unknown Room"}"
             syncMediaState()

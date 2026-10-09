@@ -54,6 +54,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.viewmodel.compose.viewModel
 import io.livekit.android.renderer.SurfaceViewRenderer
+import io.livekit.android.room.participant.ConnectionQuality
 import livekit.org.webrtc.RendererCommon
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.lazy.LazyColumn

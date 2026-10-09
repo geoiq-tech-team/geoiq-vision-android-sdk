@@ -1,6 +1,5 @@
 plugins {
     alias(libs.plugins.android.library)
-    alias(libs.plugins.kotlin.android)
     `maven-publish`
 }
 
@@ -28,11 +27,12 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_1_8
-        targetCompatibility = JavaVersion.VERSION_1_8
+        sourceCompatibility = JavaVersion.VERSION_11
+        targetCompatibility = JavaVersion.VERSION_11
     }
-    kotlinOptions {
-        jvmTarget = "1.8"
+    // Explicit publishing variant — consumed by `components["release"]` below.
+    publishing {
+        singleVariant("release")
     }
 }
 
@@ -44,7 +44,6 @@ dependencies {
     // api() — LiveKit types appear in this SDK's public signatures (see GeoVisionEvent),
     // so they must be on every consumer's compile classpath. Part of the public contract.
     api(libs.livekit.android)
-    api(libs.livekit.android.compose.components)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.test.ext.junit)

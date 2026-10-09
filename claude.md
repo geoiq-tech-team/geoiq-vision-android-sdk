@@ -21,13 +21,12 @@ This repo is a LiveKit-based Android SDK + sample app for real-time audio/video 
 
 Refactoring complete and committed. All video rendering bugs fixed. README updated.
 
-### SDK Module — 3 files
+### SDK Module — 2 files
 
 | File | Contents |
 |---|---|
 | `VisionBotSDKManager.kt` | Singleton: connection, media controls, renderer registry, file streaming |
 | `GeoVisionEvent.kt` | Sealed event hierarchy with full KDoc |
-| `GeoVisionTypeAliases.kt` | All LiveKit type re-exports under the SDK package |
 
 ### Sample App — 3 files (was 1 monolithic file, 687 lines)
 
@@ -41,38 +40,21 @@ Refactoring complete and committed. All video rendering bugs fixed. README updat
 
 ## Key Decisions & Constraints
 
-### Prefer the type aliases where they exist (but they are NOT isolation)
+### LiveKit types are used directly — no type aliases
 
-Consumers should prefer aliases from `com.geoiq.geoiq_android_lk_vision_bot_sdk` over raw
-`io.livekit.*` imports — but be clear about what this does and doesn't buy:
+`GeoVisionTypeAliases.kt` was removed. It re-exported LiveKit types under the SDK package
+(`GeoVisionRoomOptions`, `GeoVisionRoomState`, `LocalVideoTrack`, …), but typealiases give zero
+encapsulation and the set was incomplete, so consumers imported `io.livekit.*` anyway.
 
-- **What actually lets consumers skip the LiveKit dependency:** `api("io.livekit:livekit-android")`
-  in the SDK's `build.gradle.kts`, not the aliases. `api` puts LiveKit on every consumer's
-  compile classpath transitively.
-- **Typealiases provide zero encapsulation.** They expand at compile time — `com.geoiq…Track`
-  *is* `io.livekit…Track`, same class, same bytecode. Nothing is wrapped or swappable.
-- **The alias set is incomplete, so "no direct imports" is not achievable today.** Missing:
-  `Participant`, `TrackPublication`, `LocalTrackPublication`, `RoomException`,
-  `SurfaceViewRenderer`, `TextureViewRenderer`, `RendererCommon`, `StreamBytesOptions`.
-  The sample app is forced to import two of these directly
-  (`SDKInteractionScreen.kt:56-57`) to use `initializeVideoRenderer()`.
-
-Real isolation would require wrapper types (a genuine facade), not aliases. That is a large
-change and probably not worth it unless the transport is ever swapped.
-
-### Type alias naming quirks (do not rename — SOURCE compat)
-- `GeoVisionRoomOptions` → maps to `RoomOptions` (avoids clash)
-- `GeoVisionRoom` → maps to `Room`
-- `GeoVisionRoomState` → maps to `Room.State`
-- `audioTrackPublishDefaults` → lowercase, maps to `AudioTrackPublishDefaults`
-- `videoTrackPublishDefaults` → lowercase, maps to `VideoTrackPublishDefaults`
-
-> Note: typealiases have **no bytecode representation** — they live only in Kotlin metadata.
-> Renaming breaks **source** compatibility for consumers who recompile; already-compiled
-> consumer bytecode is unaffected. The "binary compat" wording in the header comment of
-> `GeoVisionTypeAliases.kt` is inaccurate. The conclusion (don't rename) still stands, and
-> the lowercase names violate Kotlin type-naming conventions — candidates for a
-> `@Deprecated` alias pointing at properly-cased names at the next major version.
+- Consumers get LiveKit through `api(libs.livekit.android)` and import `io.livekit.*` /
+  `livekit.org.webrtc.*` directly. Keep that dependency as `api` — LiveKit types are in the
+  SDK's public signatures (e.g. `connectToGeoVisionRoom(roomOptions: RoomOptions)`).
+- **Do not re-add aliases.** The sample app lives in the SDK's package, so same-name aliases
+  resolved there silently without imports — removing them later breaks the sample in ways
+  a grep won't show.
+- Removal was a **source-breaking** change: consumers importing `com.geoiq…<LiveKitType>`
+  must switch to `io.livekit…`. Lenskart imported `DataPublishReliability` and
+  `LocalVideoTrack` this way (as of SDK `v1.2.6`).
 
 ### Renderer registry
 `VisionBotSDKManager` uses a `WeakHashMap`-backed registry to track renderers — prevents leaks across sessions.
