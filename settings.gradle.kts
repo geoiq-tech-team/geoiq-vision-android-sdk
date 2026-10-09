@@ -24,3 +24,4 @@ dependencyResolutionManagement {
 rootProject.name = "GEOIQ-ANDROID-LK-VISION-BOT-SDK"
 include(":app")
 include(":GEOIQ-ANDROID-LK-VISION-BOT-SDK")
+include(":baselineprofile")

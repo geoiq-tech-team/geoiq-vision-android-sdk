@@ -30,6 +30,9 @@ Refactoring complete and committed. All video rendering bugs fixed. README updat
 
 ### Sample App — 3 files (was 1 monolithic file, 687 lines)
 
+Package `com.geoiq.geoiq_android_lk_vision_bot_sdk.sample` (namespace `…sdk.sample`) — kept
+**out of the SDK's package** on purpose; see "Baseline profile" below.
+
 | File | Contents |
 |---|---|
 | `MainActivity.kt` | 39 lines — permissions + `setContent` only |
@@ -49,9 +52,8 @@ encapsulation and the set was incomplete, so consumers imported `io.livekit.*` a
 - Consumers get LiveKit through `api(libs.livekit.android)` and import `io.livekit.*` /
   `livekit.org.webrtc.*` directly. Keep that dependency as `api` — LiveKit types are in the
   SDK's public signatures (e.g. `connectToGeoVisionRoom(roomOptions: RoomOptions)`).
-- **Do not re-add aliases.** The sample app lives in the SDK's package, so same-name aliases
-  resolved there silently without imports — removing them later breaks the sample in ways
-  a grep won't show.
+- **Do not re-add aliases.** They give no encapsulation and the sample app used to resolve
+  same-name aliases silently (it shared the SDK package then) — removal broke it invisibly.
 - Removal was a **source-breaking** change: consumers importing `com.geoiq…<LiveKitType>`
   must switch to `io.livekit…`. Lenskart imported `DataPublishReliability` and
   `LocalVideoTrack` this way (as of SDK `v1.2.6`).
@@ -68,6 +70,23 @@ library's AAR demand `compileSdk >= its own`, and AndroidX releases do the same.
   bleeding-edge versions propagate to consumers (core-ktx 1.19 needs compileSdk 37 + AGP 9.1).
 - Before releasing, run `./gradlew :app:checkProductionDebugAarMetadata` in Lenskart
   against the JitPack snapshot.
+
+### Baseline profile (SDK only)
+
+- `:baselineprofile` (com.android.test) drives the sample app through a real session:
+  connect → camera on → mic on → flip → camera/mic off → disconnect.
+- Only the SDK consumes it (`baselineProfile(project(":baselineprofile"))`), filtered to
+  `com.geoiq.geoiq_android_lk_vision_bot_sdk.*`, `io.livekit.android.**`, `livekit.org.webrtc.**`.
+  Output: `GEOIQ-…-SDK/src/main/generated/baselineProfiles/baseline-prof.txt` → packaged in the AAR.
+- The app applies `androidx.baselineprofile` **only as the target** (for `nonMinifiedRelease`) and
+  has no `baselineProfile(...)` dependency — the sample ships no profile of its own.
+- Filter rules match only `pkg.**`, `pkg.*`, or exact class names (no `$` inner-class prefixes),
+  which is why the sample must stay in its own `.sample` package.
+- Regenerate (API 33+ emulator, `lk-stg2` reachable):
+  `./gradlew :GEOIQ-ANDROID-LK-VISION-BOT-SDK:generateBaselineProfile`.
+  `automaticGenerationDuringBuild = false`, so normal/JitPack builds never need a device.
+- Not covered: `sendFile` (only reachable via the system file picker) and remote-participant
+  events (`TrackSubscribed`, `Transcription…`, `CustomMessage…`) unless an agent joins the room.
 
 ### Renderer registry
 `VisionBotSDKManager` uses a `WeakHashMap`-backed registry to track renderers — prevents leaks across sessions.

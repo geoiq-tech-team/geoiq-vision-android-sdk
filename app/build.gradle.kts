@@ -1,6 +1,10 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
+    // Target only: adds the non-minified `nonMinifiedRelease` variant that :baselineprofile
+    // drives to profile the SDK. There is deliberately no `baselineProfile(...)` dependency
+    // here — the sample app ships no baseline profile of its own; only the SDK does.
+    alias(libs.plugins.androidx.baselineprofile)
 }
 
 enum class SdkVariant {

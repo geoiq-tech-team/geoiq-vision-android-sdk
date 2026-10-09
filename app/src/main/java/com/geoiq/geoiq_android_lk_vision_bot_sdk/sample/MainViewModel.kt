@@ -1,11 +1,12 @@
-package com.geoiq.geoiq_android_lk_vision_bot_sdk
+package com.geoiq.geoiq_android_lk_vision_bot_sdk.sample
 
+import com.geoiq.geoiq_android_lk_vision_bot_sdk.GeoVisionEvent
+import com.geoiq.geoiq_android_lk_vision_bot_sdk.VisionBotSDKManager
 import android.app.Application
 import android.content.Context
 import android.net.Uri
 import android.provider.OpenableColumns
 import android.util.Log
-import com.geoiq.geoiq_android_lk_vision_bot_sdk.sample.BuildConfig
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
