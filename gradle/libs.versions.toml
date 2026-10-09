@@ -16,6 +16,7 @@ composeBom = "2026.09.00"
 
 livekit = "2.29.0"
 coroutines = "1.8.1"
+profileinstaller = "1.4.1"
 
 # GeoIQ Vision SDK — versions of the published artifact used by the sample app.
 # `geoiqVisionSdkSnapshot` is a JitPack branch snapshot: "<branch with / as ~>-SNAPSHOT" eg: master-SNAPSHOT
@@ -47,6 +48,7 @@ androidx-compose-material-icons-extended = { group = "androidx.compose.material"
 
 livekit-android = { group = "io.livekit", name = "livekit-android", version.ref = "livekit" }
 kotlinx-coroutines-android = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-android", version.ref = "coroutines" }
+androidx-profileinstaller = { group = "androidx.profileinstaller", name = "profileinstaller", version.ref = "profileinstaller" }
 
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-test-ext-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitExt" }

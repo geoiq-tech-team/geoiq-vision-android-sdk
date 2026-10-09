@@ -51,6 +51,8 @@ dependencies {
     api(libs.livekit.android)
     // api() — `VisionBotSDKManager.events` is a SharedFlow.
     api(libs.kotlinx.coroutines.android)
+    // Installs src/main/baseline-prof.txt (packaged into the AAR) on sideloaded / non-Play installs.
+    implementation(libs.androidx.profileinstaller)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.test.ext.junit)
