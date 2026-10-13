@@ -5,6 +5,7 @@ import android.content.Context
 import android.net.Uri
 import android.util.Log
 import io.livekit.android.LiveKit
+import io.livekit.android.RoomOptions
 import io.livekit.android.annotations.Beta
 import io.livekit.android.events.RoomEvent
 import io.livekit.android.events.collect
@@ -15,6 +16,7 @@ import io.livekit.android.room.datastream.StreamBytesOptions
 import io.livekit.android.room.participant.LocalParticipant
 import io.livekit.android.room.participant.Participant
 import io.livekit.android.room.participant.RemoteParticipant
+import io.livekit.android.room.track.CameraPosition
 import io.livekit.android.room.track.LocalVideoTrack
 import io.livekit.android.room.track.Track
 import kotlinx.coroutines.CoroutineExceptionHandler
@@ -96,14 +98,14 @@ object VisionBotSDKManager {
      * If a session is already active this emits [GeoVisionEvent.Error] and returns without
      * creating a new room. Call [disconnectFromGeoVisionRoom] first.
      *
-     * @param roomOptions Defaults to a standard [GeoVisionRoomOptions] if not provided.
+     * @param roomOptions Defaults to a standard [RoomOptions] if not provided.
      */
     @OptIn(Beta::class)
     fun connectToGeoVisionRoom(
         context: Context,
         socketUrl: String,
         accessToken: String,
-        roomOptions: GeoVisionRoomOptions = GeoVisionRoomOptions()
+        roomOptions: RoomOptions = RoomOptions()
     ) {
         if (currentRoom?.state == Room.State.CONNECTED || currentRoom?.state == Room.State.CONNECTING) {
             _events.tryEmit(GeoVisionEvent.Error("Already connected or connecting.", null))

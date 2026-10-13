@@ -1,5 +1,6 @@
-package com.geoiq.geoiq_android_lk_vision_bot_sdk
+package com.geoiq.geoiq_android_lk_vision_bot_sdk.sample
 
+import com.geoiq.geoiq_android_lk_vision_bot_sdk.VisionBotSDKManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -54,6 +55,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.viewmodel.compose.viewModel
 import io.livekit.android.renderer.SurfaceViewRenderer
+import io.livekit.android.room.participant.ConnectionQuality
 import livekit.org.webrtc.RendererCommon
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.lazy.LazyColumn

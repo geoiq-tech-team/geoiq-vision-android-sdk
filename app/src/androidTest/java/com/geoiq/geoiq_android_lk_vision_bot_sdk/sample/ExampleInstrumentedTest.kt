@@ -1,4 +1,4 @@
-package com.geoiq.geoiq_android_lk_vision_bot_sdk
+package com.geoiq.geoiq_android_lk_vision_bot_sdk.sample
 
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.ext.junit.runners.AndroidJUnit4

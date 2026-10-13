@@ -1,5 +1,6 @@
-package com.geoiq.geoiq_android_lk_vision_bot_sdk
+package com.geoiq.geoiq_android_lk_vision_bot_sdk.sample
 
+import com.geoiq.geoiq_android_lk_vision_bot_sdk.VisionBotSDKManager
 import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Bundle
@@ -7,7 +8,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
-import com.geoiq.geoiq_android_lk_vision_bot_sdk.ui.theme.GEOIQANDROIDLKVISIONBOTSDKTheme
+import com.geoiq.geoiq_android_lk_vision_bot_sdk.sample.ui.theme.GEOIQANDROIDLKVISIONBOTSDKTheme
 
 class MainActivity : ComponentActivity() {
 

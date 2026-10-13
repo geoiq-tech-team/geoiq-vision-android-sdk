@@ -1,6 +1,10 @@
 plugins {
     alias(libs.plugins.android.application)
-    alias(libs.plugins.kotlin.android)
+    alias(libs.plugins.kotlin.compose)
+    // Target only: adds the non-minified `nonMinifiedRelease` variant that :baselineprofile
+    // drives to profile the SDK. There is deliberately no `baselineProfile(...)` dependency
+    // here — the sample app ships no baseline profile of its own; only the SDK does.
+    alias(libs.plugins.androidx.baselineprofile)
 }
 
 enum class SdkVariant {
@@ -8,7 +12,7 @@ enum class SdkVariant {
 }
 
 android {
-    namespace = "com.geoiq.geoiq_android_lk_vision_bot_sdk"
+    namespace = "com.geoiq.geoiq_android_lk_vision_bot_sdk.sample"
     compileSdk = libs.versions.compileSdk.get().toInt()
 
     defaultConfig {
@@ -26,7 +30,8 @@ android {
 
     buildTypes {
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -60,17 +65,11 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_1_8
-        targetCompatibility = JavaVersion.VERSION_1_8
-    }
-    kotlinOptions {
-        jvmTarget = "1.8"
+        sourceCompatibility = JavaVersion.VERSION_11
+        targetCompatibility = JavaVersion.VERSION_11
     }
     buildFeatures {
         compose = true
-    }
-    composeOptions {
-        kotlinCompilerExtensionVersion = libs.versions.composeCompiler.get()
     }
     packaging {
         resources {
@@ -105,7 +104,7 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.test.manifest)
 
     val sdkModule = "com.github.geoiq-tech-team:geoiq-vision-android-sdk"
-    val sdkVariant = SdkVariant.SNAPSHOT
+    val sdkVariant = SdkVariant.DEBUG
     when (sdkVariant) {
         SdkVariant.RELEASE -> {
             implementation("$sdkModule:${libs.versions.geoiqVisionSdkRelease.get()}")
